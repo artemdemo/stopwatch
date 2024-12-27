@@ -17,3 +17,4 @@ ToDo:
 * Timer (Stopwatch).
 * Load images dynamically.
 * Render it in the browser (WASM).
+* Maybe as optimization not render so rapidly?
