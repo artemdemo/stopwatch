@@ -15,3 +15,4 @@ In order to build this project. You need to have following packages installed on
 
 * Display current time.
 * Timer (Stopwatch).
+* Load images dynamically.
