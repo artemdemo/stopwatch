@@ -1,3 +1,6 @@
+mod load_textures;
+
+use load_textures::load_textures;
 use notan::draw::*;
 use notan::prelude::*;
 
@@ -13,17 +16,16 @@ fn main() -> Result<(), String> {
 #[derive(AppState)]
 struct State {
   clear_options: ClearOptions,
-  img: Texture,
+  num_textures: [Texture; 10],
 }
 
 fn setup(gfx: &mut Graphics) -> State {
   let clear_options = ClearOptions::color(Color::new(0.4, 0.4, 0.4, 1.0));
-  let img = gfx
-    .create_texture()
-    .from_image(include_bytes!("assets/num-0-0.png"))
-    .build()
-    .unwrap();
-  State { clear_options, img }
+
+  State {
+    clear_options,
+    num_textures: load_textures(gfx),
+  }
 }
 
 fn draw(gfx: &mut Graphics, state: &mut State) {
@@ -35,6 +37,6 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   gfx.render(&renderer);
 
   let mut draw = gfx.create_draw();
-  draw.image(&state.img).position(0.0, 0.0).scale(0.2, 0.2);
+  draw.image(&state.num_textures[2]).position(0.0, 0.0).scale(0.2, 0.2);
   gfx.render(&draw);
 }
