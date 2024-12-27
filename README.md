@@ -11,8 +11,9 @@ In order to build this project. You need to have following packages installed on
 
 ----
 
-00:00:00
+ToDo:
 
 * Display current time.
 * Timer (Stopwatch).
 * Load images dynamically.
+* Render it in the browser (WASM).
