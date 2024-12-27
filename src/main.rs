@@ -48,9 +48,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
   let start = SystemTime::now();
   let duration = start.duration_since(UNIX_EPOCH).unwrap_or_default();
-  let total_seconds = duration.as_secs();
 
-  create_time_renderer(gfx, state, duration.as_secs(), W_WIDTH / 2 as u32, W_HEIGHT / 2 as u32);
+  create_time_renderer(gfx, state, duration.as_secs(), (W_WIDTH / 2) as f32, (W_HEIGHT / 2) as f32);
 }
 
 fn convert_seconds(total_seconds: u64) -> (u64, u64, u64) {
@@ -64,23 +63,49 @@ fn convert_seconds(total_seconds: u64) -> (u64, u64, u64) {
   (hours, minutes, seconds)
 }
 
-fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: u32, y: u32) {
+fn split_number(num: u64) -> (usize, usize) {
+  let first = (num / 10) as usize;
+  let second = num as usize - first * 10;
+  (first, second)
+}
+
+fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: f32, y: f32) {
   let mut draw = gfx.create_draw();
+
+  // ToDo: Merge seconds calculation into one method.
+  // This split (`convert_seconds`, `split_number`, etc) doesn't make much sense now.
   let (h, m, s) = convert_seconds(seconds);
+  let mut parts: Vec<usize> = vec![];
 
-  let first = (h / 10) as usize;
-  let second = h as usize - first * 10;
+  let (first, second) = split_number(h);
+  parts.push(first);
+  parts.push(second);
 
-  let num_texture_first = &state.num_textures[first];
-  draw
-    .image(num_texture_first)
-    .position(0.0, 0.0)
-    .scale(SCALE, SCALE);
+  let (first, second) = split_number(m);
+  parts.push(first);
+  parts.push(second);
 
-  draw
-    .image(&state.num_textures[second])
-    .position(num_texture_first.width(), 0.0)
-    .scale(SCALE, SCALE);
+  let (first, second) = split_number(s);
+  parts.push(first);
+  parts.push(second);
+
+  let mut total_width: f32 = 0.0;
+
+  for part in &parts {
+    total_width += state.num_textures[*part].width();
+  }
+
+  let mut cursor_x = x / SCALE - total_width / 2.0;
+
+  for part in &parts {
+    let num_texture = &state.num_textures[*part];
+    draw
+      .image(num_texture)
+      .position(cursor_x, 0.0)
+      .scale(SCALE, SCALE);
+
+    cursor_x += num_texture.width();
+  }
 
   gfx.render(&draw);
 }
