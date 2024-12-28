@@ -6,9 +6,8 @@ use texture_utils::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-const W_WIDTH: u32 = 700;
+const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
-const SCALE: f32 = 0.2;
 
 #[notan_main]
 fn main() -> Result<(), String> {
@@ -16,7 +15,8 @@ fn main() -> Result<(), String> {
     .add_config(
       WindowConfig::default()
         .set_size(W_WIDTH, W_HEIGHT)
-        .set_title("Stopwatch"),
+        .set_title("Stopwatch")
+        .set_resizable(true),
     )
     .add_config(DrawConfig)
     .draw(draw)
@@ -29,6 +29,10 @@ struct State {
   num_textures: [Texture; 10],
   colon_texture: Texture,
   avg_num_texture_width: f32,
+}
+
+fn calc_scale(w_height: u32) -> f32 {
+  w_height as f32 / 1100.0
 }
 
 fn setup(gfx: &mut Graphics) -> State {
@@ -67,9 +71,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   create_time_renderer(
     gfx,
     state,
-    duration.as_secs(),
-    (W_WIDTH / 2) as f32,
-    (W_HEIGHT / 2) as f32,
+    duration.as_secs()
   );
 }
 
@@ -90,7 +92,8 @@ fn split_number(num: u64) -> (usize, usize) {
   (first, second)
 }
 
-fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: f32, y: f32) {
+fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64) {
+  let (w_width, w_height) = gfx.size();
   let mut draw = gfx.create_draw();
 
   let (h, m, s) = convert_seconds(seconds);
@@ -112,16 +115,20 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   parts.push(first);
   parts.push(second);
 
+  let scale = calc_scale(w_height);
+  let center_x = w_width as f32 / 2.0;
+  let center_y = w_height as f32 / 2.0;
+
   // 00:00:00 - 8 characters in total
   // 6 of them are numbers
   // + 1 avg character width for 2 colons
   let total_width: f32 = state.avg_num_texture_width * 6.0 + state.avg_num_texture_width;
 
-  let mut cursor_x = x / SCALE - total_width / 2.0 + state.avg_num_texture_width / 2.0;
+  let mut cursor_x = center_x / scale - total_width / 2.0 + state.avg_num_texture_width / 2.0;
 
   // ToDo: We don't have to calculate height of the texure at every render.
   // It is not going to change. We can calculate it right after loading all texturese in setup.
-  let cursor_y = y / SCALE - get_texture_from_state(state, 0).height() / 2.0;
+  let cursor_y = center_y / scale - get_texture_from_state(state, 0).height() / 2.0;
 
   for part in &parts {
     let texture = get_texture_from_state(state, *part);
@@ -134,10 +141,10 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
     draw
       .image(texture)
       .position(pos_x, pos_y)
-      .scale(SCALE, SCALE);
+      .scale(scale, scale);
 
-    // draw.circle(5.).position(pos_x * SCALE, pos_y * SCALE).color(Color::new(0.5, 0.0, 0.0, 1.0));
-    // draw.circle(5.).position(cursor_x * SCALE, pos_y * SCALE).color(Color::new(0.0, 0.7, 0.0, 1.0));
+    // draw.circle(5.).position(pos_x * scale, pos_y * scale).color(Color::new(0.5, 0.0, 0.0, 1.0));
+    // draw.circle(5.).position(cursor_x * scale, pos_y * scale).color(Color::new(0.0, 0.7, 0.0, 1.0));
 
     cursor_x += if *part == COLON_NUM {
       state.avg_num_texture_width * 0.5
