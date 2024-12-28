@@ -1,4 +1,4 @@
-# Stopwatch
+# Time (Stopwatch)
 
 This is a fun project made to test 2D rendering with [notan](https://crates.io/crates/notan).
 
@@ -15,6 +15,7 @@ ToDo:
 
 * Display current time.
 * Timer (Stopwatch).
+* Use random image variant for every number at render time.
 * Load images dynamically.
 * Render it in the browser (WASM).
 * Maybe as optimization not render so rapidly?

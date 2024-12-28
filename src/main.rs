@@ -27,6 +27,7 @@ fn main() -> Result<(), String> {
 struct State {
   clear_options: ClearOptions,
   num_textures: [Texture; 10],
+  colon_texture: Texture,
 }
 
 fn setup(gfx: &mut Graphics) -> State {
@@ -35,6 +36,11 @@ fn setup(gfx: &mut Graphics) -> State {
   State {
     clear_options,
     num_textures: load_textures(gfx),
+    colon_texture: gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/colon-0.png"))
+      .build()
+      .unwrap(),
   }
 }
 
@@ -49,7 +55,13 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   let start = SystemTime::now();
   let duration = start.duration_since(UNIX_EPOCH).unwrap_or_default();
 
-  create_time_renderer(gfx, state, duration.as_secs(), (W_WIDTH / 2) as f32, (W_HEIGHT / 2) as f32);
+  create_time_renderer(
+    gfx,
+    state,
+    duration.as_secs(),
+    (W_WIDTH / 2) as f32,
+    (W_HEIGHT / 2) as f32,
+  );
 }
 
 fn convert_seconds(total_seconds: u64) -> (u64, u64, u64) {
@@ -81,9 +93,13 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   parts.push(first);
   parts.push(second);
 
+  parts.push(10);
+
   let (first, second) = split_number(m);
   parts.push(first);
   parts.push(second);
+
+  parts.push(10);
 
   let (first, second) = split_number(s);
   parts.push(first);
@@ -92,19 +108,28 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   let mut total_width: f32 = 0.0;
 
   for part in &parts {
-    total_width += state.num_textures[*part].width();
+    let texture = if part > &9 {
+      &state.colon_texture
+    } else {
+      &state.num_textures[*part]
+    };
+    total_width += texture.width();
   }
 
   let mut cursor_x = x / SCALE - total_width / 2.0;
 
   for part in &parts {
-    let num_texture = &state.num_textures[*part];
+    let texture = if part > &9 {
+      &state.colon_texture
+    } else {
+      &state.num_textures[*part]
+    };
     draw
-      .image(num_texture)
+      .image(texture)
       .position(cursor_x, 0.0)
       .scale(SCALE, SCALE);
 
-    cursor_x += num_texture.width();
+    cursor_x += texture.width();
   }
 
   gfx.render(&draw);
