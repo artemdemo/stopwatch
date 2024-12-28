@@ -113,12 +113,16 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   }
 
   let mut cursor_x = x / SCALE - total_width / 2.0;
+  
+  // ToDo: We don't have to calculate height of the texure at every render.
+  // It is not going to change. We can calculate it right after loading all texturese in setup.
+  let cursor_y = y / SCALE - get_texture_from_state(state, 0).height() / 2.0;
 
   for part in &parts {
     let texture = get_texture_from_state(state, *part);
     draw
       .image(texture)
-      .position(cursor_x, 0.0)
+      .position(cursor_x, cursor_y)
       .scale(SCALE, SCALE);
 
     cursor_x += texture.width();
