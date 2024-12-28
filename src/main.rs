@@ -28,19 +28,28 @@ struct State {
   clear_options: ClearOptions,
   num_textures: [Texture; 10],
   colon_texture: Texture,
+  avg_num_texture_width: f32,
 }
 
 fn setup(gfx: &mut Graphics) -> State {
   let clear_options = ClearOptions::color(Color::new(0.4, 0.4, 0.4, 1.0));
 
+  let num_textures = load_num_textures(gfx); 
+  let num_textures_len = num_textures.len();
+  let mut total_width: f32 = 0.0;
+  for texture in &num_textures {
+    total_width += texture.width();
+  }
+
   State {
     clear_options,
-    num_textures: load_num_textures(gfx),
+    num_textures,
     colon_texture: gfx
       .create_texture()
       .from_image(include_bytes!("assets/colon-0.png"))
       .build()
       .unwrap(),
+    avg_num_texture_width: total_width / num_textures_len as f32,
   }
 }
 
@@ -103,12 +112,8 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   parts.push(first);
   parts.push(second);
 
-  let mut total_width: f32 = 0.0;
-
-  for part in &parts {
-    let texture = get_texture_from_state(state, *part);
-    total_width += texture.width();
-  }
+  // 00:00:00 - 8 characters
+  let total_width: f32 = state.avg_num_texture_width * 8.0;
 
   let mut cursor_x = x / SCALE - total_width / 2.0;
 
@@ -123,7 +128,7 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
       .position(cursor_x, cursor_y)
       .scale(SCALE, SCALE);
 
-    cursor_x += texture.width();
+    cursor_x += state.avg_num_texture_width;
   }
 
   gfx.render(&draw);

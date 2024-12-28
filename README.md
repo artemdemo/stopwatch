@@ -13,7 +13,6 @@ In order to build this project. You need to have following packages installed on
 
 ToDo:
 
-* Display current time.
 * Timer (Stopwatch).
 * Use random image variant for every number at render time.
 * Load images dynamically.
