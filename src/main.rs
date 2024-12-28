@@ -1,6 +1,6 @@
-mod load_textures;
+mod texture_utils;
 
-use load_textures::load_textures;
+use texture_utils::*;
 use notan::draw::*;
 use notan::prelude::*;
 
@@ -35,7 +35,7 @@ fn setup(gfx: &mut Graphics) -> State {
 
   State {
     clear_options,
-    num_textures: load_textures(gfx),
+    num_textures: load_num_textures(gfx),
     colon_texture: gfx
       .create_texture()
       .from_image(include_bytes!("assets/colon-0.png"))
@@ -108,22 +108,14 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   let mut total_width: f32 = 0.0;
 
   for part in &parts {
-    let texture = if part > &9 {
-      &state.colon_texture
-    } else {
-      &state.num_textures[*part]
-    };
+    let texture = get_texture_from_state(state, *part);
     total_width += texture.width();
   }
 
   let mut cursor_x = x / SCALE - total_width / 2.0;
 
   for part in &parts {
-    let texture = if part > &9 {
-      &state.colon_texture
-    } else {
-      &state.num_textures[*part]
-    };
+    let texture = get_texture_from_state(state, *part);
     draw
       .image(texture)
       .position(cursor_x, 0.0)

@@ -1,6 +1,8 @@
 use notan::prelude::*;
 
-pub fn load_textures(gfx: &mut Graphics) -> [Texture; 10] {
+use crate::State;
+
+pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 10] {
   let num_textures: [Texture; 10] = [
     gfx
       .create_texture()
@@ -55,4 +57,13 @@ pub fn load_textures(gfx: &mut Graphics) -> [Texture; 10] {
   ];
 
   num_textures
+}
+
+pub fn get_texture_from_state(state: &State, part: usize) -> &Texture {
+  let texture = if part > 9 {
+    &state.colon_texture
+  } else {
+    &state.num_textures[part]
+  };
+  texture
 }
