@@ -13,8 +13,12 @@ In order to build this project. You need to have following packages installed on
 
 ToDo:
 
-* Timer (Stopwatch).
+* Time should always fit the screen.
+  * Currently it's only adjusted by height.
 * Use random image variant for every number at render time.
-* Load images dynamically.
+* Timer (Stopwatch).
+  * https://nazariglez.github.io/notan-web/examples/input_keyboard.html
 * Render it in the browser (WASM).
-* Maybe as optimization not render so rapidly?
+  * https://github.com/Nazariglez/notan?tab=readme-ov-file#webassembly
+* Dark / White theme
+  * https://crates.io/crates/dark-light
