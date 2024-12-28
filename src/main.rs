@@ -66,27 +66,11 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   let mills = duration.as_millis();
   let delta = mills - state.prev_render_timestamp;
 
-  if delta > 30 {
-    let mut renderer = gfx.create_renderer();
-
-    renderer.begin(Some(state.clear_options));
-    renderer.end();
-
-    gfx.render(&renderer);
+  if delta > 100 {
     state.prev_render_timestamp = mills;
-    create_time_renderer(gfx, state, duration.as_secs());
+    let time_parts = create_time_parts( duration.as_secs());
+    create_time_renderer(gfx, state, time_parts);
   }
-}
-
-fn convert_seconds(total_seconds: u64) -> (u64, u64, u64) {
-  let seconds_in_a_day = 24 * 60 * 60;
-  let seconds_today = total_seconds % seconds_in_a_day;
-
-  let hours = seconds_today / 3600;
-  let minutes = (seconds_today % 3600) / 60;
-  let seconds = seconds_today % 60;
-
-  (hours, minutes, seconds)
 }
 
 fn split_number(num: u64) -> (usize, usize) {
@@ -95,28 +79,39 @@ fn split_number(num: u64) -> (usize, usize) {
   (first, second)
 }
 
-fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64) {
-  let (w_width, w_height) = gfx.size();
-  let mut draw = gfx.create_draw();
+fn create_time_parts(seconds: u64) -> Vec<usize> {
+  let seconds_in_a_day = 24 * 60 * 60;
+  let seconds_today = seconds % seconds_in_a_day;
 
-  let (h, m, s) = convert_seconds(seconds);
+  let hours = seconds_today / 3600;
+  let minutes = (seconds_today % 3600) / 60;
+  let seconds = seconds_today % 60;
+
   let mut parts: Vec<usize> = vec![];
 
-  let (first, second) = split_number(h);
+  let (first, second) = split_number(hours);
   parts.push(first);
   parts.push(second);
 
   parts.push(COLON_NUM); // colon ":"
 
-  let (first, second) = split_number(m);
+  let (first, second) = split_number(minutes);
   parts.push(first);
   parts.push(second);
 
   parts.push(COLON_NUM); // colon ":"
 
-  let (first, second) = split_number(s);
+  let (first, second) = split_number(seconds);
   parts.push(first);
   parts.push(second);
+
+  return parts;
+}
+
+fn create_time_renderer(gfx: &mut Graphics, state: &mut State, time_parts: Vec<usize>) {
+  let (w_width, w_height) = gfx.size();
+  let mut draw = gfx.create_draw();
+  draw.clear(Color::GRAY);
 
   let scale = calc_scale(w_height);
   let center_x = w_width as f32 / 2.0;
@@ -133,8 +128,11 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64) {
   // It is not going to change. We can calculate it right after loading all texturese in setup.
   let cursor_y = center_y / scale - get_texture_from_state(state, 0).height() / 2.0;
 
-  for part in &parts {
+  let mut nums: Vec<usize> = vec![];
+
+  for part in &time_parts {
     let texture = get_texture_from_state(state, *part);
+    nums.push(*part);
     let pos_x = if *part == COLON_NUM {
       cursor_x - texture.width() / 1.3
     } else {
@@ -146,15 +144,14 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64) {
       .position(pos_x, pos_y)
       .scale(scale, scale);
 
-    // draw.circle(5.).position(pos_x * scale, pos_y * scale).color(Color::new(0.5, 0.0, 0.0, 1.0));
-    // draw.circle(5.).position(cursor_x * scale, pos_y * scale).color(Color::new(0.0, 0.7, 0.0, 1.0));
-
     cursor_x += if *part == COLON_NUM {
       state.avg_num_texture_width * 0.5
     } else {
       state.avg_num_texture_width
     };
   }
+
+  println!("{:?}", nums);
 
   gfx.render(&draw);
 }
