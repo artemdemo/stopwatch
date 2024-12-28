@@ -84,8 +84,6 @@ fn split_number(num: u64) -> (usize, usize) {
 fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: f32, y: f32) {
   let mut draw = gfx.create_draw();
 
-  // ToDo: Merge seconds calculation into one method.
-  // This split (`convert_seconds`, `split_number`, etc) doesn't make much sense now.
   let (h, m, s) = convert_seconds(seconds);
   let mut parts: Vec<usize> = vec![];
 
@@ -93,13 +91,13 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   parts.push(first);
   parts.push(second);
 
-  parts.push(10);
+  parts.push(COLON_NUM); // colon ":"
 
   let (first, second) = split_number(m);
   parts.push(first);
   parts.push(second);
 
-  parts.push(10);
+  parts.push(COLON_NUM); // colon ":"
 
   let (first, second) = split_number(s);
   parts.push(first);
@@ -113,7 +111,7 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   }
 
   let mut cursor_x = x / SCALE - total_width / 2.0;
-  
+
   // ToDo: We don't have to calculate height of the texure at every render.
   // It is not going to change. We can calculate it right after loading all texturese in setup.
   let cursor_y = y / SCALE - get_texture_from_state(state, 0).height() / 2.0;
