@@ -3,6 +3,7 @@ mod texture_utils;
 use notan::draw::*;
 use notan::prelude::*;
 use texture_utils::*;
+use rand::seq::SliceRandom;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -25,11 +26,12 @@ fn main() -> Result<(), String> {
 
 #[derive(AppState)]
 struct State {
-  clear_options: ClearOptions,
   num_textures: [Texture; 10],
   colon_texture: [Texture; 3],
   avg_num_texture_width: f32,
+  avg_num_texture_height: f32,
   prev_render_timestamp: u128,
+  draw: Draw,
 }
 
 fn calc_scale(w_height: u32) -> f32 {
@@ -37,24 +39,24 @@ fn calc_scale(w_height: u32) -> f32 {
 }
 
 fn setup(gfx: &mut Graphics) -> State {
-  let clear_options = ClearOptions::color(Color::new(0.4, 0.4, 0.4, 1.0));
-
   let num_textures = load_num_textures(gfx);
   let num_textures_len = num_textures.len();
+  let avg_num_texture_height = num_textures[0].height();
   let mut total_width: f32 = 0.0;
   for texture in &num_textures {
     total_width += texture.width();
   }
 
   State {
-    clear_options,
     num_textures,
     colon_texture: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
+    avg_num_texture_height,
     prev_render_timestamp: SystemTime::now()
       .duration_since(UNIX_EPOCH)
       .unwrap_or_default()
       .as_millis(),
+    draw: gfx.create_draw(),
   }
 }
 
@@ -66,11 +68,17 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   let mills = duration.as_millis();
   let delta = mills - state.prev_render_timestamp;
 
-  if delta > 100 {
+  if delta > 50 {
+    state.draw = gfx.create_draw();
+    state.draw.clear(Color::GRAY);
+    
+    let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = mills;
     let time_parts = create_time_parts( duration.as_secs());
-    create_time_renderer(gfx, state, time_parts);
+    apply_num_textures(state, time_parts, w_width, w_height);
   }
+
+  gfx.render(&state.draw);
 }
 
 fn split_number(num: u64) -> (usize, usize) {
@@ -108,11 +116,7 @@ fn create_time_parts(seconds: u64) -> Vec<usize> {
   return parts;
 }
 
-fn create_time_renderer(gfx: &mut Graphics, state: &mut State, time_parts: Vec<usize>) {
-  let (w_width, w_height) = gfx.size();
-  let mut draw = gfx.create_draw();
-  draw.clear(Color::GRAY);
-
+fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w_height: u32) {
   let scale = calc_scale(w_height);
   let center_x = w_width as f32 / 2.0;
   let center_y = w_height as f32 / 2.0;
@@ -124,22 +128,30 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, time_parts: Vec<u
 
   let mut cursor_x = center_x / scale - total_width / 2.0 + state.avg_num_texture_width / 2.0;
 
-  // ToDo: We don't have to calculate height of the texure at every render.
-  // It is not going to change. We can calculate it right after loading all texturese in setup.
-  let cursor_y = center_y / scale - get_texture_from_state(state, 0).height() / 2.0;
+  let cursor_y = center_y / scale - &state.avg_num_texture_height / 2.0;
 
   let mut nums: Vec<usize> = vec![];
 
   for part in &time_parts {
-    let texture = get_texture_from_state(state, *part);
+    let texture = if *part == COLON_NUM {
+      &state
+        .colon_texture
+        .choose(&mut rand::thread_rng())
+        .unwrap_or(&state.colon_texture[0])
+    } else {
+      &state.num_textures[*part]
+    };
+
     nums.push(*part);
+
     let pos_x = if *part == COLON_NUM {
       cursor_x - texture.width() / 1.3
     } else {
       cursor_x - texture.width() / 2.0
     };
     let pos_y = cursor_y;
-    draw
+
+    state.draw
       .image(texture)
       .position(pos_x, pos_y)
       .scale(scale, scale);
@@ -150,8 +162,4 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, time_parts: Vec<u
       state.avg_num_texture_width
     };
   }
-
-  println!("{:?}", nums);
-
-  gfx.render(&draw);
 }

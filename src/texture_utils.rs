@@ -1,8 +1,5 @@
 use notan::prelude::*;
 
-use crate::State;
-use rand::seq::SliceRandom;
-
 pub const COLON_NUM: usize = 10;
 
 pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 10] {
@@ -81,16 +78,4 @@ pub fn load_colon_textures(gfx: &mut Graphics) -> [Texture; 3] {
       .unwrap(),
   ];
   colon_textures
-}
-
-pub fn get_texture_from_state(state: &State, part: usize) -> &Texture {
-  let texture = if part == COLON_NUM {
-    &state
-      .colon_texture
-      .choose(&mut rand::thread_rng())
-      .unwrap_or(&state.colon_texture[0])
-  } else {
-    &state.num_textures[part]
-  };
-  texture
 }
