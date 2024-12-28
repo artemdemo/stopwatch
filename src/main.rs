@@ -27,7 +27,7 @@ fn main() -> Result<(), String> {
 #[derive(AppState)]
 struct State {
   num_textures: [Texture; 10],
-  colon_texture: [Texture; 3],
+  colon_textures: [Texture; 3],
   avg_num_texture_width: f32,
   avg_num_texture_height: f32,
   prev_render_timestamp: u128,
@@ -49,7 +49,7 @@ fn setup(gfx: &mut Graphics) -> State {
 
   State {
     num_textures,
-    colon_texture: load_colon_textures(gfx),
+    colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
     avg_num_texture_height,
     prev_render_timestamp: SystemTime::now()
@@ -135,9 +135,9 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
   for part in &time_parts {
     let texture = if *part == COLON_NUM {
       &state
-        .colon_texture
+        .colon_textures
         .choose(&mut rand::thread_rng())
-        .unwrap_or(&state.colon_texture[0])
+        .unwrap_or(&state.colon_textures[0])
     } else {
       &state.num_textures[*part]
     };
