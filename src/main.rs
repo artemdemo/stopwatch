@@ -29,6 +29,7 @@ struct State {
   num_textures: [Texture; 10],
   colon_texture: [Texture; 3],
   avg_num_texture_width: f32,
+  prev_render_timestamp: u128,
 }
 
 fn calc_scale(w_height: u32) -> f32 {
@@ -50,21 +51,31 @@ fn setup(gfx: &mut Graphics) -> State {
     num_textures,
     colon_texture: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
+    prev_render_timestamp: SystemTime::now()
+      .duration_since(UNIX_EPOCH)
+      .unwrap_or_default()
+      .as_millis(),
   }
 }
 
 fn draw(gfx: &mut Graphics, state: &mut State) {
-  let mut renderer = gfx.create_renderer();
+  let duration = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .unwrap_or_default();
 
-  renderer.begin(Some(state.clear_options));
-  renderer.end();
+  let mills = duration.as_millis();
+  let delta = mills - state.prev_render_timestamp;
 
-  gfx.render(&renderer);
+  if delta > 30 {
+    let mut renderer = gfx.create_renderer();
 
-  let start = SystemTime::now();
-  let duration = start.duration_since(UNIX_EPOCH).unwrap_or_default();
+    renderer.begin(Some(state.clear_options));
+    renderer.end();
 
-  create_time_renderer(gfx, state, duration.as_secs());
+    gfx.render(&renderer);
+    state.prev_render_timestamp = mills;
+    create_time_renderer(gfx, state, duration.as_secs());
+  }
 }
 
 fn convert_seconds(total_seconds: u64) -> (u64, u64, u64) {
