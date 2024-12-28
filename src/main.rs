@@ -1,8 +1,8 @@
 mod texture_utils;
 
-use texture_utils::*;
 use notan::draw::*;
 use notan::prelude::*;
+use texture_utils::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -34,7 +34,7 @@ struct State {
 fn setup(gfx: &mut Graphics) -> State {
   let clear_options = ClearOptions::color(Color::new(0.4, 0.4, 0.4, 1.0));
 
-  let num_textures = load_num_textures(gfx); 
+  let num_textures = load_num_textures(gfx);
   let num_textures_len = num_textures.len();
   let mut total_width: f32 = 0.0;
   for texture in &num_textures {
@@ -112,10 +112,12 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
   parts.push(first);
   parts.push(second);
 
-  // 00:00:00 - 8 characters
-  let total_width: f32 = state.avg_num_texture_width * 8.0;
+  // 00:00:00 - 8 characters in total
+  // 6 of them are numbers
+  // + 1 avg character width for 2 colons
+  let total_width: f32 = state.avg_num_texture_width * 6.0 + state.avg_num_texture_width;
 
-  let mut cursor_x = x / SCALE - total_width / 2.0;
+  let mut cursor_x = x / SCALE - total_width / 2.0 + state.avg_num_texture_width / 2.0;
 
   // ToDo: We don't have to calculate height of the texure at every render.
   // It is not going to change. We can calculate it right after loading all texturese in setup.
@@ -123,12 +125,25 @@ fn create_time_renderer(gfx: &mut Graphics, state: &mut State, seconds: u64, x: 
 
   for part in &parts {
     let texture = get_texture_from_state(state, *part);
+    let pos_x = if *part == COLON_NUM {
+      cursor_x - texture.width() / 1.3
+    } else {
+      cursor_x - texture.width() / 2.0
+    };
+    let pos_y = cursor_y;
     draw
       .image(texture)
-      .position(cursor_x, cursor_y)
+      .position(pos_x, pos_y)
       .scale(SCALE, SCALE);
 
-    cursor_x += state.avg_num_texture_width;
+    // draw.circle(5.).position(pos_x * SCALE, pos_y * SCALE).color(Color::new(0.5, 0.0, 0.0, 1.0));
+    // draw.circle(5.).position(cursor_x * SCALE, pos_y * SCALE).color(Color::new(0.0, 0.7, 0.0, 1.0));
+
+    cursor_x += if *part == COLON_NUM {
+      state.avg_num_texture_width * 0.5
+    } else {
+      state.avg_num_texture_width
+    };
   }
 
   gfx.render(&draw);
