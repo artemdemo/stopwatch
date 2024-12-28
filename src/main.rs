@@ -27,7 +27,7 @@ fn main() -> Result<(), String> {
 struct State {
   clear_options: ClearOptions,
   num_textures: [Texture; 10],
-  colon_texture: Texture,
+  colon_texture: [Texture; 3],
   avg_num_texture_width: f32,
 }
 
@@ -48,11 +48,7 @@ fn setup(gfx: &mut Graphics) -> State {
   State {
     clear_options,
     num_textures,
-    colon_texture: gfx
-      .create_texture()
-      .from_image(include_bytes!("assets/colon-0.png"))
-      .build()
-      .unwrap(),
+    colon_texture: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
   }
 }
@@ -68,11 +64,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   let start = SystemTime::now();
   let duration = start.duration_since(UNIX_EPOCH).unwrap_or_default();
 
-  create_time_renderer(
-    gfx,
-    state,
-    duration.as_secs()
-  );
+  create_time_renderer(gfx, state, duration.as_secs());
 }
 
 fn convert_seconds(total_seconds: u64) -> (u64, u64, u64) {
