@@ -2,13 +2,14 @@ mod texture_utils;
 
 use notan::draw::*;
 use notan::prelude::*;
-use texture_utils::*;
 use rand::seq::SliceRandom;
+use texture_utils::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
+const SCALE_FACTOR: f32 = 600.0;
 
 #[notan_main]
 fn main() -> Result<(), String> {
@@ -20,28 +21,25 @@ fn main() -> Result<(), String> {
         .set_resizable(true),
     )
     .add_config(DrawConfig)
+    .update(update)
     .draw(draw)
     .build()
 }
 
 #[derive(AppState)]
 struct State {
-  num_textures: [Texture; 10],
+  num_textures: [Texture; 30],
   colon_textures: [Texture; 3],
   avg_num_texture_width: f32,
-  avg_num_texture_height: f32,
+  texture_height: f32,
   prev_render_timestamp: u128,
   draw: Draw,
-}
-
-fn calc_scale(w_height: u32) -> f32 {
-  w_height as f32 / 1100.0
 }
 
 fn setup(gfx: &mut Graphics) -> State {
   let num_textures = load_num_textures(gfx);
   let num_textures_len = num_textures.len();
-  let avg_num_texture_height = num_textures[0].height();
+  let texture_height = num_textures[0].height();
   let mut total_width: f32 = 0.0;
   for texture in &num_textures {
     total_width += texture.width();
@@ -51,12 +49,28 @@ fn setup(gfx: &mut Graphics) -> State {
     num_textures,
     colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
-    avg_num_texture_height,
+    texture_height,
     prev_render_timestamp: SystemTime::now()
       .duration_since(UNIX_EPOCH)
       .unwrap_or_default()
       .as_millis(),
     draw: gfx.create_draw(),
+  }
+}
+
+fn update(app: &mut App, state: &mut State) {
+  if app.keyboard.was_released(KeyCode::S) {
+    println!("S");
+    // Switch to stopwatch
+    // Start or Pause current stopwatch
+  }
+  if app.keyboard.was_released(KeyCode::R) {
+    println!("R");
+    // Stop and Reset current stopwatch
+  }
+  if app.keyboard.was_released(KeyCode::T) {
+    println!("T");
+    // Switch back to regular time
   }
 }
 
@@ -71,10 +85,10 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   if delta > 50 {
     state.draw = gfx.create_draw();
     state.draw.clear(Color::GRAY);
-    
+
     let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = mills;
-    let time_parts = create_time_parts( duration.as_secs());
+    let time_parts = create_time_parts(duration.as_secs());
     apply_num_textures(state, time_parts, w_width, w_height);
   }
 
@@ -117,7 +131,6 @@ fn create_time_parts(seconds: u64) -> Vec<usize> {
 }
 
 fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w_height: u32) {
-  let scale = calc_scale(w_height);
   let center_x = w_width as f32 / 2.0;
   let center_y = w_height as f32 / 2.0;
 
@@ -126,9 +139,18 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
   // + 1 avg character width for 2 colons
   let total_width: f32 = state.avg_num_texture_width * 6.0 + state.avg_num_texture_width;
 
+  let texture_ratio = state.texture_height / total_width;
+  let window_ratio = w_height as f32 / w_width as f32;
+
+  let scale = if texture_ratio < window_ratio {
+    texture_ratio * w_width as f32 / SCALE_FACTOR
+  } else {
+    texture_ratio * w_height as f32 / (SCALE_FACTOR * texture_ratio)
+  };
+
   let mut cursor_x = center_x / scale - total_width / 2.0 + state.avg_num_texture_width / 2.0;
 
-  let cursor_y = center_y / scale - &state.avg_num_texture_height / 2.0;
+  let cursor_y = center_y / scale - &state.texture_height / 2.0;
 
   let mut nums: Vec<usize> = vec![];
 
@@ -139,7 +161,9 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
         .choose(&mut rand::thread_rng())
         .unwrap_or(&state.colon_textures[0])
     } else {
-      &state.num_textures[*part]
+      let variants: [usize; 3] = [0, 1, 2];
+      let num_variant = *part * 3 + variants.choose(&mut rand::thread_rng()).unwrap_or(&0);
+      &state.num_textures[num_variant]
     };
 
     nums.push(*part);
@@ -151,7 +175,8 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
     };
     let pos_y = cursor_y;
 
-    state.draw
+    state
+      .draw
       .image(texture)
       .position(pos_x, pos_y)
       .scale(scale, scale);

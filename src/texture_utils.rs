@@ -2,11 +2,21 @@ use notan::prelude::*;
 
 pub const COLON_NUM: usize = 10;
 
-pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 10] {
-  let num_textures: [Texture; 10] = [
+pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 30] {
+  let num_textures: [Texture; 30] = [
     gfx
       .create_texture()
       .from_image(include_bytes!("assets/num-0-0.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-0-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-0-2.png"))
       .build()
       .unwrap(),
     gfx
@@ -16,7 +26,27 @@ pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 10] {
       .unwrap(),
     gfx
       .create_texture()
+      .from_image(include_bytes!("assets/num-1-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-1-2.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
       .from_image(include_bytes!("assets/num-2-0.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-2-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-2-2.png"))
       .build()
       .unwrap(),
     gfx
@@ -26,7 +56,27 @@ pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 10] {
       .unwrap(),
     gfx
       .create_texture()
+      .from_image(include_bytes!("assets/num-3-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-3-2.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
       .from_image(include_bytes!("assets/num-4-0.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-4-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-4-2.png"))
       .build()
       .unwrap(),
     gfx
@@ -36,7 +86,27 @@ pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 10] {
       .unwrap(),
     gfx
       .create_texture()
+      .from_image(include_bytes!("assets/num-5-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-5-2.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
       .from_image(include_bytes!("assets/num-6-0.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-6-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-6-2.png"))
       .build()
       .unwrap(),
     gfx
@@ -46,12 +116,42 @@ pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 10] {
       .unwrap(),
     gfx
       .create_texture()
+      .from_image(include_bytes!("assets/num-7-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-7-2.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
       .from_image(include_bytes!("assets/num-8-0.png"))
       .build()
       .unwrap(),
     gfx
       .create_texture()
+      .from_image(include_bytes!("assets/num-8-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-8-2.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
       .from_image(include_bytes!("assets/num-9-0.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-9-1.png"))
+      .build()
+      .unwrap(),
+    gfx
+      .create_texture()
+      .from_image(include_bytes!("assets/num-9-2.png"))
       .build()
       .unwrap(),
   ];
