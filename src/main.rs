@@ -29,7 +29,7 @@ struct State {
   num_textures: [Texture; 10],
   colon_textures: [Texture; 3],
   avg_num_texture_width: f32,
-  avg_num_texture_height: f32,
+  texture_height: f32,
   prev_render_timestamp: u128,
   draw: Draw,
 }
@@ -41,7 +41,7 @@ fn calc_scale(w_height: u32) -> f32 {
 fn setup(gfx: &mut Graphics) -> State {
   let num_textures = load_num_textures(gfx);
   let num_textures_len = num_textures.len();
-  let avg_num_texture_height = num_textures[0].height();
+  let texture_height = num_textures[0].height();
   let mut total_width: f32 = 0.0;
   for texture in &num_textures {
     total_width += texture.width();
@@ -51,7 +51,7 @@ fn setup(gfx: &mut Graphics) -> State {
     num_textures,
     colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
-    avg_num_texture_height,
+    texture_height,
     prev_render_timestamp: SystemTime::now()
       .duration_since(UNIX_EPOCH)
       .unwrap_or_default()
@@ -126,9 +126,11 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
   // + 1 avg character width for 2 colons
   let total_width: f32 = state.avg_num_texture_width * 6.0 + state.avg_num_texture_width;
 
+  let ratio = total_width / 
+
   let mut cursor_x = center_x / scale - total_width / 2.0 + state.avg_num_texture_width / 2.0;
 
-  let cursor_y = center_y / scale - &state.avg_num_texture_height / 2.0;
+  let cursor_y = center_y / scale - &state.texture_height / 2.0;
 
   let mut nums: Vec<usize> = vec![];
 
