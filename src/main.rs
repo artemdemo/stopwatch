@@ -27,7 +27,7 @@ fn main() -> Result<(), String> {
 
 #[derive(AppState)]
 struct State {
-  num_textures: [Texture; 10],
+  num_textures: [Texture; 30],
   colon_textures: [Texture; 3],
   avg_num_texture_width: f32,
   texture_height: f32,
@@ -144,7 +144,9 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
         .choose(&mut rand::thread_rng())
         .unwrap_or(&state.colon_textures[0])
     } else {
-      &state.num_textures[*part]
+      let variants: [usize; 3] = [0, 1, 2];
+      let num_variant = *part * 3 + variants.choose(&mut rand::thread_rng()).unwrap_or(&0);
+      &state.num_textures[num_variant]
     };
 
     nums.push(*part);
