@@ -21,6 +21,7 @@ fn main() -> Result<(), String> {
         .set_resizable(true),
     )
     .add_config(DrawConfig)
+    .update(update)
     .draw(draw)
     .build()
 }
@@ -54,6 +55,22 @@ fn setup(gfx: &mut Graphics) -> State {
       .unwrap_or_default()
       .as_millis(),
     draw: gfx.create_draw(),
+  }
+}
+
+fn update(app: &mut App, state: &mut State) {
+  if app.keyboard.was_released(KeyCode::S) {
+    println!("S");
+    // Switch to stopwatch
+    // Start or Pause current stopwatch
+  }
+  if app.keyboard.was_released(KeyCode::R) {
+    println!("R");
+    // Stop and Reset current stopwatch
+  }
+  if app.keyboard.was_released(KeyCode::T) {
+    println!("T");
+    // Switch back to regular time
   }
 }
 
