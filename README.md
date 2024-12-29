@@ -13,7 +13,6 @@ In order to build this project. You need to have following packages installed on
 
 ToDo:
 
-* Use random image variants for every number at render time.
 * Timer (Stopwatch).
   * https://nazariglez.github.io/notan-web/examples/input_keyboard.html
 * Render it in the browser (WASM).
