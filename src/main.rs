@@ -2,13 +2,14 @@ mod texture_utils;
 
 use notan::draw::*;
 use notan::prelude::*;
-use texture_utils::*;
 use rand::seq::SliceRandom;
+use texture_utils::*;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
+const SCALE_FACTOR: f32 = 600.0;
 
 #[notan_main]
 fn main() -> Result<(), String> {
@@ -67,10 +68,10 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   if delta > 50 {
     state.draw = gfx.create_draw();
     state.draw.clear(Color::GRAY);
-    
+
     let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = mills;
-    let time_parts = create_time_parts( duration.as_secs());
+    let time_parts = create_time_parts(duration.as_secs());
     apply_num_textures(state, time_parts, w_width, w_height);
   }
 
@@ -121,10 +122,14 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
   // + 1 avg character width for 2 colons
   let total_width: f32 = state.avg_num_texture_width * 6.0 + state.avg_num_texture_width;
 
-  let ratio = state.texture_height / total_width;
-  let scale = ratio * w_width as f32 / 600.0;
+  let texture_ratio = state.texture_height / total_width;
+  let window_ratio = w_height as f32 / w_width as f32;
 
-  println!("{}", scale);
+  let scale = if texture_ratio < window_ratio {
+    texture_ratio * w_width as f32 / SCALE_FACTOR
+  } else {
+    texture_ratio * w_height as f32 / (SCALE_FACTOR * texture_ratio)
+  };
 
   let mut cursor_x = center_x / scale - total_width / 2.0 + state.avg_num_texture_width / 2.0;
 
@@ -151,7 +156,8 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
     };
     let pos_y = cursor_y;
 
-    state.draw
+    state
+      .draw
       .image(texture)
       .position(pos_x, pos_y)
       .scale(scale, scale);
