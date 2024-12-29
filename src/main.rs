@@ -34,10 +34,6 @@ struct State {
   draw: Draw,
 }
 
-fn calc_scale(w_height: u32) -> f32 {
-  w_height as f32 / 1100.0
-}
-
 fn setup(gfx: &mut Graphics) -> State {
   let num_textures = load_num_textures(gfx);
   let num_textures_len = num_textures.len();
@@ -117,7 +113,6 @@ fn create_time_parts(seconds: u64) -> Vec<usize> {
 }
 
 fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w_height: u32) {
-  let scale = calc_scale(w_height);
   let center_x = w_width as f32 / 2.0;
   let center_y = w_height as f32 / 2.0;
 
@@ -126,7 +121,10 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
   // + 1 avg character width for 2 colons
   let total_width: f32 = state.avg_num_texture_width * 6.0 + state.avg_num_texture_width;
 
-  let ratio = total_width / 
+  let ratio = state.texture_height / total_width;
+  let scale = ratio * w_width as f32 / 600.0;
+
+  println!("{}", scale);
 
   let mut cursor_x = center_x / scale - total_width / 2.0 + state.avg_num_texture_width / 2.0;
 
