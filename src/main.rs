@@ -27,21 +27,18 @@ fn main() -> Result<(), String> {
     .build()
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 enum StopwatchDirection {
   #[default]
   Up,
 }
 
-#[derive(Default, Debug)]
-struct StopwatchData {
-  paused: bool,
-  direction: StopwatchDirection,
-}
-
 enum TimeState {
   Time,
-  Stopwatch(StopwatchData),
+  Stopwatch {
+    paused: bool,
+    direction: StopwatchDirection,
+  },
 }
 
 #[derive(AppState)]
@@ -83,14 +80,22 @@ fn setup(gfx: &mut Graphics) -> State {
 }
 
 fn update(app: &mut App, state: &mut State) {
-  match state.time_state {
-    TimeState::Stopwatch(ref mut stopwatch_data) => {
+  match &mut state.time_state {
+    #[allow(unused_mut)]
+    TimeState::Stopwatch {
+      mut paused,
+      direction,
+    } => {
+      dbg!(paused);
       if app.keyboard.was_released(KeyCode::S) {
         println!("S");
         state.timer_started = SystemTime::now()
           .duration_since(UNIX_EPOCH)
           .unwrap_or_default();
-        stopwatch_data.paused = !stopwatch_data.paused;
+        state.time_state = TimeState::Stopwatch {
+          paused: !paused,
+          direction: direction.clone(),
+        };
       }
       if app.keyboard.was_released(KeyCode::R) {
         // Reset stopwatch
@@ -107,7 +112,10 @@ fn update(app: &mut App, state: &mut State) {
     TimeState::Time => {
       if app.keyboard.was_released(KeyCode::S) {
         println!("T");
-        state.time_state = TimeState::Stopwatch(StopwatchData::default());
+        state.time_state = TimeState::Stopwatch {
+          direction: StopwatchDirection::Up,
+          paused: true,
+        };
       }
     }
   }
@@ -118,9 +126,9 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     .duration_since(UNIX_EPOCH)
     .unwrap_or_default();
 
-  let duration = match state.time_state {
+  let duration = match &state.time_state {
     TimeState::Time => system_time,
-    TimeState::Stopwatch(_) => state.duration,
+    TimeState::Stopwatch { paused, direction } => state.duration,
   };
 
   let system_time_mills = system_time.as_millis();
