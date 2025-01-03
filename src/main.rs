@@ -49,8 +49,8 @@ struct State {
   texture_height: f32,
   prev_render_timestamp: u128,
   draw: Draw,
-  timer_started: Duration,
-  duration: Duration,
+  timer_last_addition: Duration,
+  timer_secs: u64,
   time_state: TimeState,
 }
 
@@ -73,8 +73,8 @@ fn setup(gfx: &mut Graphics) -> State {
       .unwrap_or_default()
       .as_millis(),
     draw: gfx.create_draw(),
-    timer_started: Duration::ZERO,
-    duration: Duration::ZERO,
+    timer_last_addition: Duration::ZERO,
+    timer_secs: 0,
     time_state: TimeState::Time,
   }
 }
@@ -87,21 +87,26 @@ fn update(app: &mut App, state: &mut State) {
     } => {
       if app.keyboard.was_released(KeyCode::S) {
         println!("S");
-        state.timer_started = SystemTime::now()
-          .duration_since(UNIX_EPOCH)
-          .unwrap_or_default();
         *paused = !*paused;
+        if *paused == false {
+          state.timer_last_addition = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default();
+        }
       }
       if app.keyboard.was_released(KeyCode::R) {
         // Reset stopwatch
         println!("R");
-        state.duration = Duration::new(0, 0);
+        state.timer_secs = 0;
+        state.timer_last_addition = SystemTime::now()
+          .duration_since(UNIX_EPOCH)
+          .unwrap_or_default();
       }
       if app.keyboard.was_released(KeyCode::T) {
         // Switch back to regular time
         println!("T");
         state.time_state = TimeState::Time;
-        state.duration = Duration::new(0, 0);
+        state.timer_secs = 0;
       }
     }
     TimeState::Time => {
@@ -121,16 +126,30 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     .duration_since(UNIX_EPOCH)
     .unwrap_or_default();
 
-  // state.timer_started;
-  let duration = match &state.time_state {
-    TimeState::Time => system_time,
-    TimeState::Stopwatch { paused, direction } => {
-      if state.timer_started.is_zero() {
-        Duration::ZERO
-      } else {
-        system_time.checked_sub(state.timer_started).unwrap_or_default()
+  match &mut state.time_state {
+    TimeState::Time => {}
+    TimeState::Stopwatch {
+      paused,
+      direction: _,
+    } => {
+      if *paused == false {
+        let timer_diff = system_time
+          .saturating_sub(state.timer_last_addition).as_secs();
+        if timer_diff >= 1 {
+          state.timer_secs = state.timer_secs + timer_diff;
+          state.timer_last_addition = system_time;
+        }
       }
-    },
+    }
+  }
+
+  // state.timer_unpaused;
+  let duration = match &state.time_state {
+    TimeState::Time => system_time.as_secs(),
+    TimeState::Stopwatch {
+      paused: _,
+      direction: _,
+    } => state.timer_secs,
   };
 
   let system_time_mills = system_time.as_millis();
@@ -142,7 +161,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = system_time_mills;
-    let time_parts = create_time_parts(duration.as_secs());
+    let time_parts = create_time_parts(duration);
     apply_num_textures(state, time_parts, w_width, w_height);
   }
 
