@@ -73,8 +73,8 @@ fn setup(gfx: &mut Graphics) -> State {
       .unwrap_or_default()
       .as_millis(),
     draw: gfx.create_draw(),
-    timer_started: Duration::new(0, 0),
-    duration: Duration::new(0, 0),
+    timer_started: Duration::ZERO,
+    duration: Duration::ZERO,
     time_state: TimeState::Time,
   }
 }
@@ -124,7 +124,13 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   // state.timer_started;
   let duration = match &state.time_state {
     TimeState::Time => system_time,
-    TimeState::Stopwatch { paused, direction } => system_time.checked_sub(state.timer_started).unwrap_or_default(),
+    TimeState::Stopwatch { paused, direction } => {
+      if state.timer_started.is_zero() {
+        Duration::ZERO
+      } else {
+        system_time.checked_sub(state.timer_started).unwrap_or_default()
+      }
+    },
   };
 
   let system_time_mills = system_time.as_millis();
