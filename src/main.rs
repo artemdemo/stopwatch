@@ -27,9 +27,8 @@ fn main() -> Result<(), String> {
     .build()
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug)]
 enum StopwatchDirection {
-  #[default]
   Up,
 }
 
