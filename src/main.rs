@@ -78,21 +78,10 @@ fn setup(gfx: &mut Graphics) -> State {
 }
 
 fn update(app: &mut App, state: &mut State) {
-  // match state.time_state {
-  //   TimeState::Stopwatch | TimeState::StopwatchUp | TimeState::StopwatchDown => {
-  //     if app.keyboard.was_released(KeyCode::T) {
-  //       state.time_state = TimeState::Time; // reset duration
-  //     }
-  //   }
-  // }
-
-  if app.keyboard.was_released(KeyCode::S) {
-    // Switch to stopwatch
-    // Start or Pause current stopwatch
-    println!("S");
-
-    match state.time_state {
-      TimeState::Stopwatch(direction) => {
+  match state.time_state {
+    TimeState::Stopwatch(direction) => {
+      if app.keyboard.was_released(KeyCode::S) {
+        println!("S");
         state.timer_started = SystemTime::now()
           .duration_since(UNIX_EPOCH)
           .unwrap_or_default();
@@ -101,21 +90,24 @@ fn update(app: &mut App, state: &mut State) {
           StopwatchDirection::Up => StopwatchDirection::None,
         });
       }
-      TimeState::Time => {
+      if app.keyboard.was_released(KeyCode::R) {
+        // Reset stopwatch
+        println!("R");
+        state.duration = Duration::new(0, 0);
+      }
+      if app.keyboard.was_released(KeyCode::T) {
+        // Switch back to regular time
+        println!("T");
+        state.time_state = TimeState::Time;
+        state.duration = Duration::new(0, 0);
+      }
+    }
+    TimeState::Time => {
+      if app.keyboard.was_released(KeyCode::S) {
+        println!("T");
         state.time_state = TimeState::Stopwatch(StopwatchDirection::None);
       }
     }
-  }
-  if app.keyboard.was_released(KeyCode::R) {
-    // Reset stopwatch
-    println!("R");
-    state.duration = Duration::new(0, 0);
-  }
-  if app.keyboard.was_released(KeyCode::T) {
-    // Switch back to regular time
-    println!("T");
-    state.time_state = TimeState::Time;
-    state.duration = Duration::new(0, 0);
   }
 }
 
