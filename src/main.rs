@@ -27,16 +27,21 @@ fn main() -> Result<(), String> {
     .build()
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(Default, Debug)]
 enum StopwatchDirection {
-  None,
+  #[default]
   Up,
 }
 
-#[derive(PartialEq)]
+#[derive(Default, Debug)]
+struct StopwatchData {
+  paused: bool,
+  direction: StopwatchDirection,
+}
+
 enum TimeState {
   Time,
-  Stopwatch(StopwatchDirection),
+  Stopwatch(StopwatchData),
 }
 
 #[derive(AppState)]
@@ -79,16 +84,13 @@ fn setup(gfx: &mut Graphics) -> State {
 
 fn update(app: &mut App, state: &mut State) {
   match state.time_state {
-    TimeState::Stopwatch(direction) => {
+    TimeState::Stopwatch(ref mut stopwatch_data) => {
       if app.keyboard.was_released(KeyCode::S) {
         println!("S");
         state.timer_started = SystemTime::now()
           .duration_since(UNIX_EPOCH)
           .unwrap_or_default();
-        state.time_state = TimeState::Stopwatch(match direction {
-          StopwatchDirection::None => StopwatchDirection::Up,
-          StopwatchDirection::Up => StopwatchDirection::None,
-        });
+        stopwatch_data.paused = !stopwatch_data.paused;
       }
       if app.keyboard.was_released(KeyCode::R) {
         // Reset stopwatch
@@ -105,7 +107,7 @@ fn update(app: &mut App, state: &mut State) {
     TimeState::Time => {
       if app.keyboard.was_released(KeyCode::S) {
         println!("T");
-        state.time_state = TimeState::Stopwatch(StopwatchDirection::None);
+        state.time_state = TimeState::Stopwatch(StopwatchData::default());
       }
     }
   }
