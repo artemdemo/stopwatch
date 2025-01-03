@@ -5,6 +5,7 @@ use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
 
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const W_WIDTH: u32 = 900;
@@ -26,6 +27,18 @@ fn main() -> Result<(), String> {
     .build()
 }
 
+#[derive(PartialEq, Clone, Copy)]
+enum StopwatchDirection {
+  None,
+  Up,
+}
+
+#[derive(PartialEq)]
+enum TimeState {
+  Time,
+  Stopwatch(StopwatchDirection),
+}
+
 #[derive(AppState)]
 struct State {
   num_textures: [Texture; 30],
@@ -34,6 +47,9 @@ struct State {
   texture_height: f32,
   prev_render_timestamp: u128,
   draw: Draw,
+  timer_started: Duration,
+  duration: Duration,
+  time_state: TimeState,
 }
 
 fn setup(gfx: &mut Graphics) -> State {
@@ -55,39 +71,73 @@ fn setup(gfx: &mut Graphics) -> State {
       .unwrap_or_default()
       .as_millis(),
     draw: gfx.create_draw(),
+    timer_started: Duration::new(0, 0),
+    duration: Duration::new(0, 0),
+    time_state: TimeState::Time,
   }
 }
 
 fn update(app: &mut App, state: &mut State) {
+  // match state.time_state {
+  //   TimeState::Stopwatch | TimeState::StopwatchUp | TimeState::StopwatchDown => {
+  //     if app.keyboard.was_released(KeyCode::T) {
+  //       state.time_state = TimeState::Time; // reset duration
+  //     }
+  //   }
+  // }
+
   if app.keyboard.was_released(KeyCode::S) {
-    println!("S");
     // Switch to stopwatch
     // Start or Pause current stopwatch
+    println!("S");
+
+    match state.time_state {
+      TimeState::Stopwatch(direction) => {
+        state.timer_started = SystemTime::now()
+          .duration_since(UNIX_EPOCH)
+          .unwrap_or_default();
+        state.time_state = TimeState::Stopwatch(match direction {
+          StopwatchDirection::None => StopwatchDirection::Up,
+          StopwatchDirection::Up => StopwatchDirection::None,
+        });
+      }
+      TimeState::Time => {
+        state.time_state = TimeState::Stopwatch(StopwatchDirection::None);
+      }
+    }
   }
   if app.keyboard.was_released(KeyCode::R) {
+    // Reset stopwatch
     println!("R");
-    // Stop and Reset current stopwatch
+    state.duration = Duration::new(0, 0);
   }
   if app.keyboard.was_released(KeyCode::T) {
-    println!("T");
     // Switch back to regular time
+    println!("T");
+    state.time_state = TimeState::Time;
+    state.duration = Duration::new(0, 0);
   }
 }
 
 fn draw(gfx: &mut Graphics, state: &mut State) {
-  let duration = SystemTime::now()
+  let system_time = SystemTime::now()
     .duration_since(UNIX_EPOCH)
     .unwrap_or_default();
 
-  let mills = duration.as_millis();
-  let delta = mills - state.prev_render_timestamp;
+  let duration = match state.time_state {
+    TimeState::Time => system_time,
+    TimeState::Stopwatch(_) => state.duration,
+  };
+
+  let system_time_mills = system_time.as_millis();
+  let delta = system_time_mills - state.prev_render_timestamp;
 
   if delta > 50 {
     state.draw = gfx.create_draw();
     state.draw.clear(Color::GRAY);
 
     let (w_width, w_height) = gfx.size();
-    state.prev_render_timestamp = mills;
+    state.prev_render_timestamp = system_time_mills;
     let time_parts = create_time_parts(duration.as_secs());
     apply_num_textures(state, time_parts, w_width, w_height);
   }
