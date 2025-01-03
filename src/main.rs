@@ -81,21 +81,16 @@ fn setup(gfx: &mut Graphics) -> State {
 
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
-    #[allow(unused_mut)]
     TimeState::Stopwatch {
-      mut paused,
-      direction,
+      paused,
+      direction: _,
     } => {
-      dbg!(paused);
       if app.keyboard.was_released(KeyCode::S) {
         println!("S");
         state.timer_started = SystemTime::now()
           .duration_since(UNIX_EPOCH)
           .unwrap_or_default();
-        state.time_state = TimeState::Stopwatch {
-          paused: !paused,
-          direction: direction.clone(),
-        };
+        *paused = !*paused;
       }
       if app.keyboard.was_released(KeyCode::R) {
         // Reset stopwatch
@@ -111,7 +106,7 @@ fn update(app: &mut App, state: &mut State) {
     }
     TimeState::Time => {
       if app.keyboard.was_released(KeyCode::S) {
-        println!("T");
+        println!("S");
         state.time_state = TimeState::Stopwatch {
           direction: StopwatchDirection::Up,
           paused: true,
@@ -126,9 +121,10 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     .duration_since(UNIX_EPOCH)
     .unwrap_or_default();
 
+  // state.timer_started;
   let duration = match &state.time_state {
     TimeState::Time => system_time,
-    TimeState::Stopwatch { paused, direction } => state.duration,
+    TimeState::Stopwatch { paused, direction } => system_time.checked_sub(state.timer_started).unwrap_or_default(),
   };
 
   let system_time_mills = system_time.as_millis();
