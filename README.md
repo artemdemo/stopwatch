@@ -8,14 +8,19 @@ In order to build this project. You need to have following packages installed on
 
 * `cmake`
 
+**Keyboard shortcuts**
+
+* `S` - switch to stopwatch, start/pause the stopwatch
+* `R` - reset the stopwatch
+* `T` - go back to showing time
+
+In order to count down, while in stopwatch, just start entering number to count down from.
+Then press `S`.
 
 ----
 
 ToDo:
 
-* Timer (Stopwatch).
-  * Count backwards from a given time.
-  * https://nazariglez.github.io/notan-web/examples/input_keyboard.html
 * Render it in the browser (WASM).
   * https://github.com/Nazariglez/notan?tab=readme-ov-file#webassembly
 * Dark / White theme
