@@ -27,9 +27,11 @@ fn main() -> Result<(), String> {
     .build()
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum StopwatchDirection {
+  None,
   Up,
+  Down,
 }
 
 enum TimeState {
@@ -82,15 +84,54 @@ fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
     TimeState::Stopwatch {
       paused,
-      direction: _,
+      direction,
     } => {
+      if *paused == true {
+        let mut seconds = 0;
+        if app.keyboard.was_released(KeyCode::Key1) {
+          seconds = 1;
+        }
+        if app.keyboard.was_released(KeyCode::Key2) {
+          seconds = 2;
+        }
+        if app.keyboard.was_released(KeyCode::Key3) {
+          seconds = 3;
+        }
+        if app.keyboard.was_released(KeyCode::Key4) {
+          seconds = 4;
+        }
+        if app.keyboard.was_released(KeyCode::Key5) {
+          seconds = 5;
+        }
+        if app.keyboard.was_released(KeyCode::Key6) {
+          seconds = 6;
+        }
+        if app.keyboard.was_released(KeyCode::Key7) {
+          seconds = 7;
+        }
+        if app.keyboard.was_released(KeyCode::Key8) {
+          seconds = 8;
+        }
+        if app.keyboard.was_released(KeyCode::Key9) {
+          seconds = 9;
+        }
+        if seconds > 0 {
+          state.timer_secs = state.timer_secs * 10 + 60 * seconds;
+        }
+      }
       if app.keyboard.was_released(KeyCode::S) {
-        println!("S");
         *paused = !*paused;
         if *paused == false {
           state.timer_last_addition = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default();
+          if *direction == StopwatchDirection::None {
+            if state.timer_secs > 0 {
+              *direction = StopwatchDirection::Down;
+            } else {
+              *direction = StopwatchDirection::Up;
+            }
+          }
         }
       }
       if app.keyboard.was_released(KeyCode::R) {
@@ -100,6 +141,8 @@ fn update(app: &mut App, state: &mut State) {
         state.timer_last_addition = SystemTime::now()
           .duration_since(UNIX_EPOCH)
           .unwrap_or_default();
+        *paused = true;
+        *direction = StopwatchDirection::None;
       }
       if app.keyboard.was_released(KeyCode::T) {
         // Switch back to regular time
@@ -112,7 +155,7 @@ fn update(app: &mut App, state: &mut State) {
       if app.keyboard.was_released(KeyCode::S) {
         println!("S");
         state.time_state = TimeState::Stopwatch {
-          direction: StopwatchDirection::Up,
+          direction: StopwatchDirection::None,
           paused: true,
         };
       }
@@ -129,13 +172,25 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     TimeState::Time => {}
     TimeState::Stopwatch {
       paused,
-      direction: _,
+      direction,
     } => {
       if *paused == false {
         let timer_diff = system_time
-          .saturating_sub(state.timer_last_addition).as_secs();
+          .saturating_sub(state.timer_last_addition)
+          .as_secs();
         if timer_diff >= 1 {
-          state.timer_secs = state.timer_secs + timer_diff;
+          println!("{:?}", direction);
+          match *direction {
+            StopwatchDirection::Up => {
+              state.timer_secs = state.timer_secs + timer_diff;
+            },
+            StopwatchDirection::Down => {
+              state.timer_secs = (state.timer_secs - timer_diff).max(0);
+            },
+            StopwatchDirection::None => {
+              panic!("This shouldn't happen, but here we are");
+            }
+          }
           state.timer_last_addition = system_time;
         }
       }
