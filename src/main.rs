@@ -123,6 +123,9 @@ fn update(app: &mut App, state: &mut State) {
         if app.keyboard.was_released(KeyCode::Key9) {
           seconds = 9;
         }
+        if app.keyboard.was_released(KeyCode::Key0) {
+          state.timer_secs = state.timer_secs * 10;
+        }
         if seconds > 0 {
           state.timer_secs = state.timer_secs * 10 + seconds * 60;
         }
