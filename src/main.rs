@@ -81,15 +81,15 @@ fn setup(gfx: &mut Graphics) -> State {
 fn reset_stopwatch(state: &mut State) {
   state.timer_secs = 0;
   state.timer_last_addition = Utc::now().timestamp_millis();
-  state.time_state = TimeState::Stopwatch { paused: true, direction: StopwatchDirection::None };
+  state.time_state = TimeState::Stopwatch {
+    paused: true,
+    direction: StopwatchDirection::None,
+  };
 }
 
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
-    TimeState::Stopwatch {
-      paused,
-      direction,
-    } => {
+    TimeState::Stopwatch { paused, direction } => {
       if *paused == true {
         let mut seconds = 0;
         if app.keyboard.was_released(KeyCode::Key1) {
@@ -165,24 +165,21 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
   match &mut state.time_state {
     TimeState::Time => {}
-    TimeState::Stopwatch {
-      paused,
-      direction,
-    } => {
+    TimeState::Stopwatch { paused, direction } => {
       if *paused == false {
-        let timer_diff = ( system_time - state.timer_last_addition ) / 1000;
+        let timer_diff = (system_time - state.timer_last_addition) / 1000;
         if timer_diff >= 1 {
           match *direction {
             StopwatchDirection::Up => {
               state.timer_secs = state.timer_secs + timer_diff;
-            },
+            }
             StopwatchDirection::Down => {
               if state.timer_secs >= timer_diff {
                 state.timer_secs = state.timer_secs - timer_diff;
               } else {
                 reset_stopwatch(state);
               }
-            },
+            }
             StopwatchDirection::None => {
               panic!("This shouldn't happen, but here we are");
             }
