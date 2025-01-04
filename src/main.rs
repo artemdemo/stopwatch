@@ -44,6 +44,32 @@ enum TimeState {
   },
 }
 
+//language=glsl
+const FRAGMENT: ShaderSource = notan::fragment_shader! {
+    r#"
+    #version 450
+    precision mediump float;
+
+    layout(location = 0) in vec2 v_uvs;
+    layout(location = 1) in vec4 v_color;
+
+    layout(binding = 0) uniform sampler2D u_texture;
+    layout(set = 0, binding = 1) uniform TextureInfo {
+        float u_size;
+    };
+
+    layout(location = 0) out vec4 color;
+
+    void main() {
+        vec2 tex_size = textureSize(u_texture, 0);
+        vec2 p_size = vec2(u_size);
+        vec2 coord = fract(v_uvs) * tex_size;
+        coord = floor(coord/p_size) * p_size;
+        color = texture(u_texture, coord / tex_size) * v_color;
+    }
+"#
+};
+
 #[derive(AppState)]
 struct State {
   num_textures: [Texture; 30],
@@ -54,6 +80,8 @@ struct State {
   draw: Draw,
   timer_last_addition: i64,
   timer_secs: i64,
+  pipeline: Pipeline,
+  uniforms: Buffer,
   time_state: TimeState,
 }
 
@@ -66,8 +94,17 @@ fn setup(gfx: &mut Graphics) -> State {
     total_width += texture.width();
   }
 
+  let pipeline = create_image_pipeline(gfx, Some(&FRAGMENT)).unwrap();
+  let uniforms = gfx
+    .create_uniform_buffer(1, "TextureInfo")
+    .with_data(&[5.0])
+    .build()
+    .unwrap();
+
   State {
     num_textures,
+    pipeline,
+    uniforms,
     colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
     texture_height,
@@ -211,6 +248,12 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     state.prev_render_timestamp = system_time_mills;
     let time_parts = create_time_parts(duration);
     apply_num_textures(state, time_parts, w_width, w_height);
+
+    state.draw.image_pipeline()
+        .pipeline(&state.pipeline)
+        .uniform_buffer(&state.uniforms);
+
+    state.draw.image_pipeline().remove();
   }
 
   gfx.render(&state.draw);
