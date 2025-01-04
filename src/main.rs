@@ -1,12 +1,13 @@
 mod texture_utils;
 
+use chrono::Utc;
 use notan::draw::*;
 use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
 
-use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
+// use std::time::Duration;
+// use std::time::{SystemTime, UNIX_EPOCH};
 
 const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
@@ -48,10 +49,10 @@ struct State {
   colon_textures: [Texture; 3],
   avg_num_texture_width: f32,
   texture_height: f32,
-  prev_render_timestamp: u128,
+  prev_render_timestamp: i64,
   draw: Draw,
-  timer_last_addition: Duration,
-  timer_secs: u64,
+  timer_last_addition: i64,
+  timer_secs: i64,
   time_state: TimeState,
 }
 
@@ -69,12 +70,9 @@ fn setup(gfx: &mut Graphics) -> State {
     colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
     texture_height,
-    prev_render_timestamp: SystemTime::now()
-      .duration_since(UNIX_EPOCH)
-      .unwrap_or_default()
-      .as_millis(),
+    prev_render_timestamp: Utc::now().timestamp_millis(),
     draw: gfx.create_draw(),
-    timer_last_addition: Duration::ZERO,
+    timer_last_addition: Utc::now().timestamp_millis(),
     timer_secs: 0,
     time_state: TimeState::Time,
   }
@@ -82,9 +80,7 @@ fn setup(gfx: &mut Graphics) -> State {
 
 fn reset_stopwatch(state: &mut State) {
   state.timer_secs = 0;
-  state.timer_last_addition = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .unwrap_or_default();
+  state.timer_last_addition = Utc::now().timestamp_millis();
   state.time_state = TimeState::Stopwatch { paused: true, direction: StopwatchDirection::None };
 }
 
@@ -133,9 +129,7 @@ fn update(app: &mut App, state: &mut State) {
       if app.keyboard.was_released(KeyCode::S) {
         *paused = !*paused;
         if *paused == false {
-          state.timer_last_addition = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default();
+          state.timer_last_addition = Utc::now().timestamp_millis();
           if *direction == StopwatchDirection::None {
             if state.timer_secs > 0 {
               *direction = StopwatchDirection::Down;
@@ -167,9 +161,7 @@ fn update(app: &mut App, state: &mut State) {
 }
 
 fn draw(gfx: &mut Graphics, state: &mut State) {
-  let system_time = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .unwrap_or_default();
+  let system_time: i64 = Utc::now().timestamp_millis();
 
   match &mut state.time_state {
     TimeState::Time => {}
@@ -178,9 +170,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
       direction,
     } => {
       if *paused == false {
-        let timer_diff = system_time
-          .saturating_sub(state.timer_last_addition)
-          .as_secs();
+        let timer_diff = ( system_time - state.timer_last_addition ) / 1000;
         if timer_diff >= 1 {
           match *direction {
             StopwatchDirection::Up => {
@@ -205,14 +195,14 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
   // state.timer_unpaused;
   let duration = match &state.time_state {
-    TimeState::Time => system_time.as_secs(),
+    TimeState::Time => system_time / 1000,
     TimeState::Stopwatch {
       paused: _,
       direction: _,
     } => state.timer_secs,
   };
 
-  let system_time_mills = system_time.as_millis();
+  let system_time_mills = system_time;
   let delta = system_time_mills - state.prev_render_timestamp;
 
   if delta > 50 {
@@ -228,13 +218,13 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   gfx.render(&state.draw);
 }
 
-fn split_number(num: u64) -> (usize, usize) {
+fn split_number(num: i64) -> (usize, usize) {
   let first = (num / 10) as usize;
   let second = num as usize - first * 10;
   (first, second)
 }
 
-fn create_time_parts(seconds: u64) -> Vec<usize> {
+fn create_time_parts(seconds: i64) -> Vec<usize> {
   let seconds_in_a_day = 24 * 60 * 60;
   let seconds_today = seconds % seconds_in_a_day;
 
