@@ -8,16 +8,29 @@ In order to build this project. You need to have following packages installed on
 
 * `cmake`
 
+**Keyboard shortcuts**
+
+* `S` - switch to stopwatch, start/pause the stopwatch
+* `R` - reset the stopwatch
+* `T` - go back to showing time
+
+In order to count down, while in stopwatch, just start entering number to count down from.
+Then press `S`.
+
+**WASM support**
+
+Everything is tasted with [`trunk`](https://trunkrs.dev/).
+You need to install it (I used `brew install trunk`), then you can build and serve your code.
+Just run following:
+
+```
+trunk serve
+```
 
 ----
 
 ToDo:
 
-* Timer (Stopwatch).
-  * Count backwards from a given time.
-  * https://nazariglez.github.io/notan-web/examples/input_keyboard.html
-* Render it in the browser (WASM).
-  * https://github.com/Nazariglez/notan?tab=readme-ov-file#webassembly
 * Dark / White theme
   * https://crates.io/crates/dark-light
 
@@ -28,3 +41,5 @@ Backlog:
 * Display current state (Time or Stopwatch).
 * Display whether stopwatch is running and in what direction.
 * After that you actually can switch back to time without pausing stopwatch.
+* Figure out how to build WASM without `trunk`
+

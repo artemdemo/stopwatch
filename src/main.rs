@@ -1,12 +1,14 @@
 mod texture_utils;
 
+// I started using `std:time`, but it can't be compiled into WASM
+// So I switched to `chrono`
+use chrono::Utc;
+
 use notan::draw::*;
 use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
 
-use std::time::Duration;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
@@ -27,9 +29,11 @@ fn main() -> Result<(), String> {
     .build()
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 enum StopwatchDirection {
+  None,
   Up,
+  Down,
 }
 
 enum TimeState {
@@ -46,10 +50,10 @@ struct State {
   colon_textures: [Texture; 3],
   avg_num_texture_width: f32,
   texture_height: f32,
-  prev_render_timestamp: u128,
+  prev_render_timestamp: i64,
   draw: Draw,
-  timer_last_addition: Duration,
-  timer_secs: u64,
+  timer_last_addition: i64,
+  timer_secs: i64,
   time_state: TimeState,
 }
 
@@ -67,52 +71,89 @@ fn setup(gfx: &mut Graphics) -> State {
     colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
     texture_height,
-    prev_render_timestamp: SystemTime::now()
-      .duration_since(UNIX_EPOCH)
-      .unwrap_or_default()
-      .as_millis(),
+    prev_render_timestamp: Utc::now().timestamp_millis(),
     draw: gfx.create_draw(),
-    timer_last_addition: Duration::ZERO,
+    timer_last_addition: Utc::now().timestamp_millis(),
     timer_secs: 0,
     time_state: TimeState::Time,
   }
 }
 
+fn reset_stopwatch(state: &mut State) {
+  state.timer_secs = 0;
+  state.timer_last_addition = Utc::now().timestamp_millis();
+  state.time_state = TimeState::Stopwatch {
+    paused: true,
+    direction: StopwatchDirection::None,
+  };
+}
+
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
-    TimeState::Stopwatch {
-      paused,
-      direction: _,
-    } => {
+    TimeState::Stopwatch { paused, direction } => {
+      if *paused == true {
+        let mut seconds = 0;
+        if app.keyboard.was_released(KeyCode::Key1) {
+          seconds = 1;
+        }
+        if app.keyboard.was_released(KeyCode::Key2) {
+          seconds = 2;
+        }
+        if app.keyboard.was_released(KeyCode::Key3) {
+          seconds = 3;
+        }
+        if app.keyboard.was_released(KeyCode::Key4) {
+          seconds = 4;
+        }
+        if app.keyboard.was_released(KeyCode::Key5) {
+          seconds = 5;
+        }
+        if app.keyboard.was_released(KeyCode::Key6) {
+          seconds = 6;
+        }
+        if app.keyboard.was_released(KeyCode::Key7) {
+          seconds = 7;
+        }
+        if app.keyboard.was_released(KeyCode::Key8) {
+          seconds = 8;
+        }
+        if app.keyboard.was_released(KeyCode::Key9) {
+          seconds = 9;
+        }
+        if app.keyboard.was_released(KeyCode::Key0) {
+          state.timer_secs = state.timer_secs * 10;
+        }
+        if seconds > 0 {
+          state.timer_secs = state.timer_secs * 10 + seconds * 60;
+        }
+      }
       if app.keyboard.was_released(KeyCode::S) {
-        println!("S");
         *paused = !*paused;
         if *paused == false {
-          state.timer_last_addition = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default();
+          state.timer_last_addition = Utc::now().timestamp_millis();
+          if *direction == StopwatchDirection::None {
+            if state.timer_secs > 0 {
+              *direction = StopwatchDirection::Down;
+            } else {
+              *direction = StopwatchDirection::Up;
+            }
+          }
         }
       }
       if app.keyboard.was_released(KeyCode::R) {
         // Reset stopwatch
-        println!("R");
-        state.timer_secs = 0;
-        state.timer_last_addition = SystemTime::now()
-          .duration_since(UNIX_EPOCH)
-          .unwrap_or_default();
+        reset_stopwatch(state);
       }
       if app.keyboard.was_released(KeyCode::T) {
         // Switch back to regular time
-        println!("T");
         state.time_state = TimeState::Time;
         state.timer_secs = 0;
       }
     }
     TimeState::Time => {
       if app.keyboard.was_released(KeyCode::S) {
-        println!("S");
         state.time_state = TimeState::Stopwatch {
-          direction: StopwatchDirection::Up,
+          direction: StopwatchDirection::None,
           paused: true,
         };
       }
@@ -121,21 +162,29 @@ fn update(app: &mut App, state: &mut State) {
 }
 
 fn draw(gfx: &mut Graphics, state: &mut State) {
-  let system_time = SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .unwrap_or_default();
+  let system_time: i64 = Utc::now().timestamp_millis();
 
   match &mut state.time_state {
     TimeState::Time => {}
-    TimeState::Stopwatch {
-      paused,
-      direction: _,
-    } => {
+    TimeState::Stopwatch { paused, direction } => {
       if *paused == false {
-        let timer_diff = system_time
-          .saturating_sub(state.timer_last_addition).as_secs();
+        let timer_diff = (system_time - state.timer_last_addition) / 1000;
         if timer_diff >= 1 {
-          state.timer_secs = state.timer_secs + timer_diff;
+          match *direction {
+            StopwatchDirection::Up => {
+              state.timer_secs = state.timer_secs + timer_diff;
+            }
+            StopwatchDirection::Down => {
+              if state.timer_secs >= timer_diff {
+                state.timer_secs = state.timer_secs - timer_diff;
+              } else {
+                reset_stopwatch(state);
+              }
+            }
+            StopwatchDirection::None => {
+              panic!("This shouldn't happen, but here we are");
+            }
+          }
           state.timer_last_addition = system_time;
         }
       }
@@ -144,14 +193,14 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
   // state.timer_unpaused;
   let duration = match &state.time_state {
-    TimeState::Time => system_time.as_secs(),
+    TimeState::Time => system_time / 1000,
     TimeState::Stopwatch {
       paused: _,
       direction: _,
     } => state.timer_secs,
   };
 
-  let system_time_mills = system_time.as_millis();
+  let system_time_mills = system_time;
   let delta = system_time_mills - state.prev_render_timestamp;
 
   if delta > 50 {
@@ -167,13 +216,13 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   gfx.render(&state.draw);
 }
 
-fn split_number(num: u64) -> (usize, usize) {
+fn split_number(num: i64) -> (usize, usize) {
   let first = (num / 10) as usize;
   let second = num as usize - first * 10;
   (first, second)
 }
 
-fn create_time_parts(seconds: u64) -> Vec<usize> {
+fn create_time_parts(seconds: i64) -> Vec<usize> {
   let seconds_in_a_day = 24 * 60 * 60;
   let seconds_today = seconds % seconds_in_a_day;
 
