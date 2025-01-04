@@ -80,6 +80,14 @@ fn setup(gfx: &mut Graphics) -> State {
   }
 }
 
+fn reset_stopwatch(state: &mut State) {
+  state.timer_secs = 0;
+  state.timer_last_addition = SystemTime::now()
+    .duration_since(UNIX_EPOCH)
+    .unwrap_or_default();
+  state.time_state = TimeState::Stopwatch { paused: true, direction: StopwatchDirection::None };
+}
+
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
     TimeState::Stopwatch {
@@ -116,7 +124,7 @@ fn update(app: &mut App, state: &mut State) {
           seconds = 9;
         }
         if seconds > 0 {
-          state.timer_secs = state.timer_secs * 10 + 60 * seconds;
+          state.timer_secs = state.timer_secs * 10 + seconds * 60;
         }
       }
       if app.keyboard.was_released(KeyCode::S) {
@@ -136,24 +144,16 @@ fn update(app: &mut App, state: &mut State) {
       }
       if app.keyboard.was_released(KeyCode::R) {
         // Reset stopwatch
-        println!("R");
-        state.timer_secs = 0;
-        state.timer_last_addition = SystemTime::now()
-          .duration_since(UNIX_EPOCH)
-          .unwrap_or_default();
-        *paused = true;
-        *direction = StopwatchDirection::None;
+        reset_stopwatch(state);
       }
       if app.keyboard.was_released(KeyCode::T) {
         // Switch back to regular time
-        println!("T");
         state.time_state = TimeState::Time;
         state.timer_secs = 0;
       }
     }
     TimeState::Time => {
       if app.keyboard.was_released(KeyCode::S) {
-        println!("S");
         state.time_state = TimeState::Stopwatch {
           direction: StopwatchDirection::None,
           paused: true,
@@ -179,13 +179,16 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
           .saturating_sub(state.timer_last_addition)
           .as_secs();
         if timer_diff >= 1 {
-          println!("{:?}", direction);
           match *direction {
             StopwatchDirection::Up => {
               state.timer_secs = state.timer_secs + timer_diff;
             },
             StopwatchDirection::Down => {
-              state.timer_secs = (state.timer_secs - timer_diff).max(0);
+              if state.timer_secs >= timer_diff {
+                state.timer_secs = state.timer_secs - timer_diff;
+              } else {
+                reset_stopwatch(state);
+              }
             },
             StopwatchDirection::None => {
               panic!("This shouldn't happen, but here we are");
