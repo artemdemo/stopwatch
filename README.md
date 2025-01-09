@@ -37,4 +37,5 @@ Backlog:
 * Display whether stopwatch is running and in what direction.
 * After that you actually can switch back to time without pausing stopwatch.
 * Figure out how to build WASM without `trunk`
+* [bug] Start regular timer, pause, enter number (allowed, but shouldn't be), start again
 

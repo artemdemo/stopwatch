@@ -259,38 +259,24 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
         .clone()
         .is_some_and(|theme| theme == os_theme)
     {
-      match os_theme {
-        ColorTheme::Light => {
-          state.uniforms = Some(
-            gfx
-              .create_uniform_buffer(1, "TextureInfo")
-              .with_data(&[Color::BLACK.rgb()])
-              .build()
-              .unwrap(),
-          );
-        }
-        ColorTheme::Dark => {
-          state.uniforms = Some(
-            gfx
-              .create_uniform_buffer(1, "TextureInfo")
-              .with_data(&[Color::WHITE.rgb()])
-              .build()
-              .unwrap(),
-          );
-        }
-      }
+      state.uniforms = Some(
+        gfx
+          .create_uniform_buffer(1, "TextureInfo")
+          .with_data(&[match os_theme {
+            ColorTheme::Light => Color::BLACK.rgb(),
+            ColorTheme::Dark => Color::WHITE.rgb(),
+          }])
+          .build()
+          .unwrap(),
+      );
       state.current_theme = Some(os_theme);
     }
 
     if let Some(theme) = &state.current_theme {
-      match theme {
-        ColorTheme::Light => {
-          state.draw.clear(Color::GRAY);
-        }
-        ColorTheme::Dark => {
-          state.draw.clear(Color::new(0.25, 0.25, 0.25, 1.0));
-        }
-      }
+      state.draw.clear(match theme {
+        ColorTheme::Light => Color::GRAY,
+        ColorTheme::Dark => Color::new(0.25, 0.25, 0.25, 1.0),
+      });
     }
 
     let (w_width, w_height) = gfx.size();
