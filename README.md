@@ -29,13 +29,6 @@ trunk serve
 
 ----
 
-ToDo:
-
-* Dark / White theme
-  * https://crates.io/crates/dark-light
-
-----
-
 Backlog:
 
 * Display current state (Time or Stopwatch).
