@@ -121,6 +121,10 @@ fn reset_stopwatch(state: &mut State) {
   };
 }
 
+fn is_dark_theme() -> bool {
+  true
+}
+
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
     TimeState::Stopwatch { paused, direction } => {
@@ -238,7 +242,17 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
   if delta > 50 {
     state.draw = gfx.create_draw();
-    state.draw.clear(Color::GRAY);
+
+    if is_dark_theme() {
+      state.uniforms = gfx
+        .create_uniform_buffer(1, "TextureInfo")
+        .with_data(&[Color::WHITE.rgb()])
+        .build()
+        .unwrap();
+      state.draw.clear(Color::new(0.25, 0.25, 0.25, 1.0));
+    } else {
+      state.draw.clear(Color::GRAY);
+    }
 
     let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = system_time_mills;
