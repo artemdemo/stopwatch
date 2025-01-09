@@ -5,6 +5,7 @@ mod texture_utils;
 use chrono::Utc;
 
 use notan::draw::*;
+use notan::math::vec3;
 use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
@@ -54,7 +55,7 @@ const FRAGMENT: ShaderSource = notan::fragment_shader! {
 
     layout(binding = 0) uniform sampler2D u_texture;
     layout(set = 0, binding = 1) uniform TextureInfo {
-      float u_size;
+      vec3 u_color;
     };
 
     layout(location = 0) out vec4 color;
@@ -93,7 +94,7 @@ fn setup(gfx: &mut Graphics) -> State {
   let pipeline = create_image_pipeline(gfx, Some(&FRAGMENT)).unwrap();
   let uniforms = gfx
     .create_uniform_buffer(1, "TextureInfo")
-    .with_data(&[5.0])
+    .with_data(&[vec3(0.0, 1.0, 0.0)])
     .build()
     .unwrap();
 
