@@ -122,7 +122,12 @@ fn reset_stopwatch(state: &mut State) {
 }
 
 fn is_dark_theme() -> bool {
-  true
+  let mode = dark_light::detect();
+  match mode {
+    dark_light::Mode::Light => false,
+    dark_light::Mode::Dark => true,
+    dark_light::Mode::Default => true,
+  }
 }
 
 fn update(app: &mut App, state: &mut State) {
