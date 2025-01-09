@@ -9,7 +9,6 @@ use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
 
-
 const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
 const SCALE_FACTOR: f32 = 600.0;
@@ -44,6 +43,29 @@ enum TimeState {
   },
 }
 
+//language=glsl
+const FRAGMENT: ShaderSource = notan::fragment_shader! {
+    r#"
+    #version 450
+    precision mediump float;
+
+    layout(location = 0) in vec2 v_uvs;
+    layout(location = 1) in vec4 v_color;
+
+    layout(binding = 0) uniform sampler2D u_texture;
+    layout(set = 0, binding = 1) uniform TextureInfo {
+      vec3 u_color;
+    };
+
+    layout(location = 0) out vec4 color;
+
+    void main() {
+      vec4 texColor = texture(u_texture, v_uvs);
+      color = vec4(u_color, texColor.a);
+    }
+"#
+};
+
 #[derive(AppState)]
 struct State {
   num_textures: [Texture; 30],
@@ -54,6 +76,8 @@ struct State {
   draw: Draw,
   timer_last_addition: i64,
   timer_secs: i64,
+  pipeline: Pipeline,
+  uniforms: Buffer,
   time_state: TimeState,
 }
 
@@ -66,8 +90,17 @@ fn setup(gfx: &mut Graphics) -> State {
     total_width += texture.width();
   }
 
+  let pipeline = create_image_pipeline(gfx, Some(&FRAGMENT)).unwrap();
+  let uniforms = gfx
+    .create_uniform_buffer(1, "TextureInfo")
+    .with_data(&[Color::BLACK.rgb()])
+    .build()
+    .unwrap();
+
   State {
     num_textures,
+    pipeline,
+    uniforms,
     colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
     texture_height,
@@ -86,6 +119,15 @@ fn reset_stopwatch(state: &mut State) {
     paused: true,
     direction: StopwatchDirection::None,
   };
+}
+
+fn is_dark_theme() -> bool {
+  let mode = dark_light::detect();
+  match mode {
+    dark_light::Mode::Light => false,
+    dark_light::Mode::Dark => true,
+    dark_light::Mode::Default => true,
+  }
 }
 
 fn update(app: &mut App, state: &mut State) {
@@ -205,12 +247,31 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
   if delta > 50 {
     state.draw = gfx.create_draw();
-    state.draw.clear(Color::GRAY);
+
+    if is_dark_theme() {
+      state.uniforms = gfx
+        .create_uniform_buffer(1, "TextureInfo")
+        .with_data(&[Color::WHITE.rgb()])
+        .build()
+        .unwrap();
+      state.draw.clear(Color::new(0.25, 0.25, 0.25, 1.0));
+    } else {
+      state.draw.clear(Color::GRAY);
+    }
 
     let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = system_time_mills;
     let time_parts = create_time_parts(duration);
+
+    state
+      .draw
+      .image_pipeline()
+      .pipeline(&state.pipeline)
+      .uniform_buffer(&state.uniforms);
+
     apply_num_textures(state, time_parts, w_width, w_height);
+
+    state.draw.image_pipeline().remove();
   }
 
   gfx.render(&state.draw);
