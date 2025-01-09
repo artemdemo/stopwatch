@@ -43,6 +43,12 @@ enum TimeState {
   },
 }
 
+#[derive(Debug, PartialEq, Clone)]
+enum ColorTheme {
+  Light,
+  Dark,
+}
+
 //language=glsl
 const FRAGMENT: ShaderSource = notan::fragment_shader! {
     r#"
@@ -78,6 +84,7 @@ struct State {
   timer_secs: i64,
   pipeline: Pipeline,
   uniforms: Option<Buffer>,
+  current_theme: Option<ColorTheme>,
   time_state: TimeState,
 }
 
@@ -103,6 +110,7 @@ fn setup(gfx: &mut Graphics) -> State {
     draw: gfx.create_draw(),
     timer_last_addition: Utc::now().timestamp_millis(),
     timer_secs: 0,
+    current_theme: None,
     time_state: TimeState::Time,
   }
 }
@@ -116,12 +124,12 @@ fn reset_stopwatch(state: &mut State) {
   };
 }
 
-fn is_dark_theme() -> bool {
+fn get_os_theme() -> ColorTheme {
   let mode = dark_light::detect();
   match mode {
-    dark_light::Mode::Light => false,
-    dark_light::Mode::Dark => true,
-    dark_light::Mode::Default => true,
+    dark_light::Mode::Light => ColorTheme::Light,
+    dark_light::Mode::Dark => ColorTheme::Dark,
+    dark_light::Mode::Default => ColorTheme::Dark,
   }
 }
 
@@ -243,15 +251,46 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   if delta > 50 {
     state.draw = gfx.create_draw();
 
-    if is_dark_theme() {
-      state.uniforms = Some(gfx
-        .create_uniform_buffer(1, "TextureInfo")
-        .with_data(&[Color::WHITE.rgb()])
-        .build()
-        .unwrap());
-      state.draw.clear(Color::new(0.25, 0.25, 0.25, 1.0));
-    } else {
-      state.draw.clear(Color::GRAY);
+    let os_theme = get_os_theme();
+
+    if state.current_theme.is_none()
+      || state
+        .current_theme
+        .clone()
+        .is_some_and(|theme| theme == os_theme)
+    {
+      match os_theme {
+        ColorTheme::Light => {
+          state.uniforms = Some(
+            gfx
+              .create_uniform_buffer(1, "TextureInfo")
+              .with_data(&[Color::BLACK.rgb()])
+              .build()
+              .unwrap(),
+          );
+        }
+        ColorTheme::Dark => {
+          state.uniforms = Some(
+            gfx
+              .create_uniform_buffer(1, "TextureInfo")
+              .with_data(&[Color::WHITE.rgb()])
+              .build()
+              .unwrap(),
+          );
+        }
+      }
+      state.current_theme = Some(os_theme);
+    }
+
+    if let Some(theme) = &state.current_theme {
+      match theme {
+        ColorTheme::Light => {
+          state.draw.clear(Color::GRAY);
+        }
+        ColorTheme::Dark => {
+          state.draw.clear(Color::new(0.25, 0.25, 0.25, 1.0));
+        }
+      }
     }
 
     let (w_width, w_height) = gfx.size();
@@ -260,7 +299,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     {
       let mut pipeline = state.draw.image_pipeline();
-      if let Some (uniforms) = &state.uniforms {
+      if let Some(uniforms) = &state.uniforms {
         pipeline.pipeline(&state.pipeline);
         pipeline.uniform_buffer(&uniforms);
       }
