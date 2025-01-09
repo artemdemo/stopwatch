@@ -55,17 +55,14 @@ const FRAGMENT: ShaderSource = notan::fragment_shader! {
 
     layout(binding = 0) uniform sampler2D u_texture;
     layout(set = 0, binding = 1) uniform TextureInfo {
-        float u_size;
+      float u_size;
     };
 
     layout(location = 0) out vec4 color;
 
     void main() {
-        vec2 tex_size = textureSize(u_texture, 0);
-        vec2 p_size = vec2(u_size);
-        vec2 coord = fract(v_uvs) * tex_size;
-        coord = floor(coord/p_size) * p_size;
-        color = texture(u_texture, coord / tex_size) * v_color;
+      vec4 texColor = texture(u_texture, v_uvs);
+      color = vec4(1.0, 0.0, 0.0, texColor.a);
     }
 "#
 };
@@ -244,17 +241,29 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     state.draw = gfx.create_draw();
     state.draw.clear(Color::GRAY);
 
-    let (w_width, w_height) = gfx.size();
+    // let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = system_time_mills;
-    let time_parts = create_time_parts(duration);
-    apply_num_textures(state, time_parts, w_width, w_height);
+    // let time_parts = create_time_parts(duration);
+    // apply_num_textures(state, time_parts, w_width, w_height);
+
+    state
+      .draw
+      .image(&state.num_textures[0])
+      .position(0.0, 0.0)
+      .scale(0.5, 0.5);
 
     state.draw.image_pipeline()
         .pipeline(&state.pipeline)
         .uniform_buffer(&state.uniforms);
 
-    state.draw.image_pipeline().remove();
-  }
+      state
+        .draw
+        .image(&state.num_textures[0])
+        .position(500.0, 0.0)
+        .scale(0.5, 0.5);
+
+      state.draw.image_pipeline().remove();
+    }
 
   gfx.render(&state.draw);
 }
