@@ -5,7 +5,6 @@ mod texture_utils;
 use chrono::Utc;
 
 use notan::draw::*;
-use notan::math::vec3;
 use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
@@ -94,7 +93,7 @@ fn setup(gfx: &mut Graphics) -> State {
   let pipeline = create_image_pipeline(gfx, Some(&FRAGMENT)).unwrap();
   let uniforms = gfx
     .create_uniform_buffer(1, "TextureInfo")
-    .with_data(&[vec3(0.0, 1.0, 0.0)])
+    .with_data(&[Color::BLACK.rgb()])
     .build()
     .unwrap();
 
