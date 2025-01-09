@@ -9,7 +9,6 @@ use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
 
-
 const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
 const SCALE_FACTOR: f32 = 600.0;
@@ -241,29 +240,20 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     state.draw = gfx.create_draw();
     state.draw.clear(Color::GRAY);
 
-    // let (w_width, w_height) = gfx.size();
+    let (w_width, w_height) = gfx.size();
     state.prev_render_timestamp = system_time_mills;
-    // let time_parts = create_time_parts(duration);
-    // apply_num_textures(state, time_parts, w_width, w_height);
+    let time_parts = create_time_parts(duration);
 
     state
       .draw
-      .image(&state.num_textures[0])
-      .position(0.0, 0.0)
-      .scale(0.5, 0.5);
+      .image_pipeline()
+      .pipeline(&state.pipeline)
+      .uniform_buffer(&state.uniforms);
 
-    state.draw.image_pipeline()
-        .pipeline(&state.pipeline)
-        .uniform_buffer(&state.uniforms);
+    apply_num_textures(state, time_parts, w_width, w_height);
 
-      state
-        .draw
-        .image(&state.num_textures[0])
-        .position(500.0, 0.0)
-        .scale(0.5, 0.5);
-
-      state.draw.image_pipeline().remove();
-    }
+    state.draw.image_pipeline().remove();
+  }
 
   gfx.render(&state.draw);
 }
