@@ -77,7 +77,7 @@ struct State {
   timer_last_addition: i64,
   timer_secs: i64,
   pipeline: Pipeline,
-  uniforms: Buffer,
+  uniforms: Option<Buffer>,
   time_state: TimeState,
 }
 
@@ -91,16 +91,11 @@ fn setup(gfx: &mut Graphics) -> State {
   }
 
   let pipeline = create_image_pipeline(gfx, Some(&FRAGMENT)).unwrap();
-  let uniforms = gfx
-    .create_uniform_buffer(1, "TextureInfo")
-    .with_data(&[Color::BLACK.rgb()])
-    .build()
-    .unwrap();
 
   State {
     num_textures,
     pipeline,
-    uniforms,
+    uniforms: None,
     colon_textures: load_colon_textures(gfx),
     avg_num_texture_width: total_width / num_textures_len as f32,
     texture_height,
@@ -249,11 +244,11 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     state.draw = gfx.create_draw();
 
     if is_dark_theme() {
-      state.uniforms = gfx
+      state.uniforms = Some(gfx
         .create_uniform_buffer(1, "TextureInfo")
         .with_data(&[Color::WHITE.rgb()])
         .build()
-        .unwrap();
+        .unwrap());
       state.draw.clear(Color::new(0.25, 0.25, 0.25, 1.0));
     } else {
       state.draw.clear(Color::GRAY);
@@ -263,11 +258,13 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     state.prev_render_timestamp = system_time_mills;
     let time_parts = create_time_parts(duration);
 
-    state
-      .draw
-      .image_pipeline()
-      .pipeline(&state.pipeline)
-      .uniform_buffer(&state.uniforms);
+    {
+      let mut pipeline = state.draw.image_pipeline();
+      if let Some (uniforms) = &state.uniforms {
+        pipeline.pipeline(&state.pipeline);
+        pipeline.uniform_buffer(&uniforms);
+      }
+    }
 
     apply_num_textures(state, time_parts, w_width, w_height);
 
