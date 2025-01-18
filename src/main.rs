@@ -5,6 +5,7 @@ mod texture_utils;
 use chrono::Utc;
 
 use notan::draw::*;
+use notan::log::warn;
 use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
@@ -125,12 +126,17 @@ fn reset_stopwatch(state: &mut State) {
 }
 
 fn get_os_theme() -> ColorTheme {
-  let mode = dark_light::detect();
-  match mode {
-    dark_light::Mode::Light => ColorTheme::Light,
-    dark_light::Mode::Dark => ColorTheme::Dark,
-    dark_light::Mode::Default => ColorTheme::Dark,
+  let result = dark_light::detect();
+  if let Ok(mode) = result {
+    return match mode {
+      dark_light::Mode::Light => ColorTheme::Light,
+      dark_light::Mode::Dark => ColorTheme::Dark,
+      dark_light::Mode::Unspecified => ColorTheme::Dark,
+    }
+  } else {
+    warn!("Error occured while getting theme");
   }
+  return ColorTheme::Dark;
 }
 
 fn update(app: &mut App, state: &mut State) {
@@ -257,7 +263,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
       || state
         .current_theme
         .clone()
-        .is_some_and(|theme| theme == os_theme)
+        .is_some_and(|theme| theme != os_theme)
     {
       state.uniforms = Some(
         gfx
