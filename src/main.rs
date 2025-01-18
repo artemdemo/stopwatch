@@ -14,6 +14,12 @@ const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
 const SCALE_FACTOR: f32 = 600.0;
 
+const LIGHT_THEME_TEXT_CLR: [f32; 3] = Color::BLACK.rgb();
+const LIGHT_THEME_BG_CLR: Color = Color::GRAY;
+
+const DARK_THEME_TEXT_CLR: [f32; 3] = Color::WHITE.rgb();
+const DARK_THEME_BG_CLR: Color = Color::new(0.25, 0.25, 0.25, 1.0);
+
 #[notan_main]
 fn main() -> Result<(), String> {
   notan::init_with(setup)
@@ -248,8 +254,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
         gfx
           .create_uniform_buffer(1, "TextureInfo")
           .with_data(&[match os_theme {
-            theme::ColorTheme::Light => Color::BLACK.rgb(),
-            theme::ColorTheme::Dark => Color::WHITE.rgb(),
+            theme::ColorTheme::Light => LIGHT_THEME_TEXT_CLR,
+            theme::ColorTheme::Dark => DARK_THEME_TEXT_CLR,
           }])
           .build()
           .unwrap(),
@@ -259,8 +265,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     if let Some(theme) = &state.current_theme {
       state.draw.clear(match theme {
-        theme::ColorTheme::Light => Color::GRAY,
-        theme::ColorTheme::Dark => Color::new(0.25, 0.25, 0.25, 1.0),
+        theme::ColorTheme::Light => LIGHT_THEME_BG_CLR,
+        theme::ColorTheme::Dark => DARK_THEME_BG_CLR,
       });
     }
 
