@@ -1,11 +1,12 @@
 mod texture_utils;
+mod theme;
 
 // I started using `std:time`, but it can't be compiled into WASM
 // So I switched to `chrono`
 use chrono::Utc;
 
 use notan::draw::*;
-use notan::log::warn;
+
 use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;
@@ -44,12 +45,6 @@ enum TimeState {
   },
 }
 
-#[derive(Debug, PartialEq, Clone)]
-enum ColorTheme {
-  Light,
-  Dark,
-}
-
 //language=glsl
 const FRAGMENT: ShaderSource = notan::fragment_shader! {
     r#"
@@ -85,7 +80,7 @@ struct State {
   timer_secs: i64,
   pipeline: Pipeline,
   uniforms: Option<Buffer>,
-  current_theme: Option<ColorTheme>,
+  current_theme: Option<theme::ColorTheme>,
   time_state: TimeState,
 }
 
@@ -123,20 +118,6 @@ fn reset_stopwatch(state: &mut State) {
     paused: true,
     direction: StopwatchDirection::None,
   };
-}
-
-fn get_os_theme() -> ColorTheme {
-  let result = dark_light::detect();
-  if let Ok(mode) = result {
-    return match mode {
-      dark_light::Mode::Light => ColorTheme::Light,
-      dark_light::Mode::Dark => ColorTheme::Dark,
-      dark_light::Mode::Unspecified => ColorTheme::Dark,
-    }
-  } else {
-    warn!("Error occured while getting theme");
-  }
-  return ColorTheme::Dark;
 }
 
 fn update(app: &mut App, state: &mut State) {
@@ -257,7 +238,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   if delta > 50 {
     state.draw = gfx.create_draw();
 
-    let os_theme = get_os_theme();
+    let os_theme = theme::get_os_theme();
 
     if state.current_theme.is_none()
       || state
@@ -269,8 +250,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
         gfx
           .create_uniform_buffer(1, "TextureInfo")
           .with_data(&[match os_theme {
-            ColorTheme::Light => Color::BLACK.rgb(),
-            ColorTheme::Dark => Color::WHITE.rgb(),
+            theme::ColorTheme::Light => Color::BLACK.rgb(),
+            theme::ColorTheme::Dark => Color::WHITE.rgb(),
           }])
           .build()
           .unwrap(),
@@ -280,8 +261,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     if let Some(theme) = &state.current_theme {
       state.draw.clear(match theme {
-        ColorTheme::Light => Color::GRAY,
-        ColorTheme::Dark => Color::new(0.25, 0.25, 0.25, 1.0),
+        theme::ColorTheme::Light => Color::GRAY,
+        theme::ColorTheme::Dark => Color::new(0.25, 0.25, 0.25, 1.0),
       });
     }
 
