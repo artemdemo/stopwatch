@@ -31,7 +31,6 @@ fn main() -> Result<(), String> {
 
 #[derive(Debug, PartialEq)]
 enum StopwatchDirection {
-  None,
   Up,
   Down,
 }
@@ -40,7 +39,7 @@ enum TimeState {
   Time,
   Stopwatch {
     paused: bool,
-    direction: StopwatchDirection,
+    direction: Option<StopwatchDirection>,
   },
 }
 
@@ -115,14 +114,14 @@ fn reset_stopwatch(state: &mut State) {
   state.timer_last_addition = Utc::now().timestamp_millis();
   state.time_state = TimeState::Stopwatch {
     paused: true,
-    direction: StopwatchDirection::None,
+    direction: None,
   };
 }
 
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
     TimeState::Stopwatch { paused, direction } => {
-      if *paused == true && direction == &StopwatchDirection::None {
+      if *paused == true && direction.is_none() {
         let mut seconds = 0;
         if app.keyboard.was_released(KeyCode::Key1) {
           seconds = 1;
@@ -162,11 +161,11 @@ fn update(app: &mut App, state: &mut State) {
         *paused = !*paused;
         if *paused == false {
           state.timer_last_addition = Utc::now().timestamp_millis();
-          if *direction == StopwatchDirection::None {
+          if *direction == None {
             if state.timer_secs > 0 {
-              *direction = StopwatchDirection::Down;
+              *direction = Some(StopwatchDirection::Down);
             } else {
-              *direction = StopwatchDirection::Up;
+              *direction = Some(StopwatchDirection::Up);
             }
           }
         }
@@ -184,7 +183,7 @@ fn update(app: &mut App, state: &mut State) {
     TimeState::Time => {
       if app.keyboard.was_released(KeyCode::S) {
         state.time_state = TimeState::Stopwatch {
-          direction: StopwatchDirection::None,
+          direction: None,
           paused: true,
         };
       }
@@ -201,18 +200,18 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
       if *paused == false {
         let timer_diff = (system_time - state.timer_last_addition) / 1000;
         if timer_diff >= 1 {
-          match *direction {
-            StopwatchDirection::Up => {
+          match direction {
+            Some(StopwatchDirection::Up) => {
               state.timer_secs = state.timer_secs + timer_diff;
             }
-            StopwatchDirection::Down => {
+            Some(StopwatchDirection::Down) => {
               if state.timer_secs >= timer_diff {
                 state.timer_secs = state.timer_secs - timer_diff;
               } else {
                 reset_stopwatch(state);
               }
             }
-            StopwatchDirection::None => {
+            None => {
               panic!("This shouldn't happen, but here we are");
             }
           }
