@@ -122,7 +122,7 @@ fn reset_stopwatch(state: &mut State) {
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
     TimeState::Stopwatch { paused, direction } => {
-      if *paused == true {
+      if *paused == true && direction == &StopwatchDirection::None {
         let mut seconds = 0;
         if app.keyboard.was_released(KeyCode::Key1) {
           seconds = 1;
