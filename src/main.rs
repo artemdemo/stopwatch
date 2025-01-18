@@ -127,7 +127,7 @@ fn reset_stopwatch(state: &mut State) {
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
     TimeState::Stopwatch { paused, direction } => {
-      if *paused == true && direction.is_none() {
+      if *paused && direction.is_none() {
         let mut seconds = 0;
         if app.keyboard.was_released(KeyCode::Key1) {
           seconds = 1;
@@ -218,7 +218,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
               }
             }
             None => {
-              panic!("This shouldn't happen, but here we are");
+              panic!("Unexpected None value for direction in Stopwatch state. (This shouldn't happen, but here we are)");
             }
           }
           state.timer_last_addition = system_time;
