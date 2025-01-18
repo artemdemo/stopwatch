@@ -6,7 +6,6 @@ mod theme;
 use chrono::Utc;
 
 use notan::draw::*;
-
 use notan::prelude::*;
 use rand::seq::SliceRandom;
 use texture_utils::*;

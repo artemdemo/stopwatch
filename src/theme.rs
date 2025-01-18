@@ -13,7 +13,7 @@ pub fn get_os_theme() -> ColorTheme {
       dark_light::Mode::Light => ColorTheme::Light,
       dark_light::Mode::Dark => ColorTheme::Dark,
       dark_light::Mode::Unspecified => ColorTheme::Dark,
-    }
+    };
   } else {
     warn!("Error occured while getting theme");
   }
