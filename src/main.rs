@@ -14,6 +14,12 @@ const W_WIDTH: u32 = 900;
 const W_HEIGHT: u32 = 300;
 const SCALE_FACTOR: f32 = 600.0;
 
+const LIGHT_THEME_TEXT_CLR: [f32; 3] = Color::BLACK.rgb();
+const LIGHT_THEME_BG_CLR: Color = Color::GRAY;
+
+const DARK_THEME_TEXT_CLR: [f32; 3] = Color::WHITE.rgb();
+const DARK_THEME_BG_CLR: Color = Color::new(0.25, 0.25, 0.25, 1.0);
+
 #[notan_main]
 fn main() -> Result<(), String> {
   notan::init_with(setup)
@@ -31,7 +37,6 @@ fn main() -> Result<(), String> {
 
 #[derive(Debug, PartialEq)]
 enum StopwatchDirection {
-  None,
   Up,
   Down,
 }
@@ -40,7 +45,7 @@ enum TimeState {
   Time,
   Stopwatch {
     paused: bool,
-    direction: StopwatchDirection,
+    direction: Option<StopwatchDirection>,
   },
 }
 
@@ -115,14 +120,14 @@ fn reset_stopwatch(state: &mut State) {
   state.timer_last_addition = Utc::now().timestamp_millis();
   state.time_state = TimeState::Stopwatch {
     paused: true,
-    direction: StopwatchDirection::None,
+    direction: None,
   };
 }
 
 fn update(app: &mut App, state: &mut State) {
   match &mut state.time_state {
     TimeState::Stopwatch { paused, direction } => {
-      if *paused == true {
+      if *paused && direction.is_none() {
         let mut seconds = 0;
         if app.keyboard.was_released(KeyCode::Key1) {
           seconds = 1;
@@ -162,11 +167,11 @@ fn update(app: &mut App, state: &mut State) {
         *paused = !*paused;
         if *paused == false {
           state.timer_last_addition = Utc::now().timestamp_millis();
-          if *direction == StopwatchDirection::None {
+          if *direction == None {
             if state.timer_secs > 0 {
-              *direction = StopwatchDirection::Down;
+              *direction = Some(StopwatchDirection::Down);
             } else {
-              *direction = StopwatchDirection::Up;
+              *direction = Some(StopwatchDirection::Up);
             }
           }
         }
@@ -184,7 +189,7 @@ fn update(app: &mut App, state: &mut State) {
     TimeState::Time => {
       if app.keyboard.was_released(KeyCode::S) {
         state.time_state = TimeState::Stopwatch {
-          direction: StopwatchDirection::None,
+          direction: None,
           paused: true,
         };
       }
@@ -201,19 +206,19 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
       if *paused == false {
         let timer_diff = (system_time - state.timer_last_addition) / 1000;
         if timer_diff >= 1 {
-          match *direction {
-            StopwatchDirection::Up => {
+          match direction {
+            Some(StopwatchDirection::Up) => {
               state.timer_secs = state.timer_secs + timer_diff;
             }
-            StopwatchDirection::Down => {
+            Some(StopwatchDirection::Down) => {
               if state.timer_secs >= timer_diff {
                 state.timer_secs = state.timer_secs - timer_diff;
               } else {
                 reset_stopwatch(state);
               }
             }
-            StopwatchDirection::None => {
-              panic!("This shouldn't happen, but here we are");
+            None => {
+              panic!("Unexpected None value for direction in Stopwatch state. (This shouldn't happen, but here we are)");
             }
           }
           state.timer_last_addition = system_time;
@@ -249,8 +254,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
         gfx
           .create_uniform_buffer(1, "TextureInfo")
           .with_data(&[match os_theme {
-            theme::ColorTheme::Light => Color::BLACK.rgb(),
-            theme::ColorTheme::Dark => Color::WHITE.rgb(),
+            theme::ColorTheme::Light => LIGHT_THEME_TEXT_CLR,
+            theme::ColorTheme::Dark => DARK_THEME_TEXT_CLR,
           }])
           .build()
           .unwrap(),
@@ -260,8 +265,8 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
 
     if let Some(theme) = &state.current_theme {
       state.draw.clear(match theme {
-        theme::ColorTheme::Light => Color::GRAY,
-        theme::ColorTheme::Dark => Color::new(0.25, 0.25, 0.25, 1.0),
+        theme::ColorTheme::Light => LIGHT_THEME_BG_CLR,
+        theme::ColorTheme::Dark => DARK_THEME_BG_CLR,
       });
     }
 
@@ -285,7 +290,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
   gfx.render(&state.draw);
 }
 
-fn split_number(num: i64) -> (usize, usize) {
+fn split_2digits_number(num: i64) -> (usize, usize) {
   let first = (num / 10) as usize;
   let second = num as usize - first * 10;
   (first, second)
@@ -301,19 +306,19 @@ fn create_time_parts(seconds: i64) -> Vec<usize> {
 
   let mut parts: Vec<usize> = vec![];
 
-  let (first, second) = split_number(hours);
+  let (first, second) = split_2digits_number(hours);
   parts.push(first);
   parts.push(second);
 
   parts.push(COLON_NUM); // colon ":"
 
-  let (first, second) = split_number(minutes);
+  let (first, second) = split_2digits_number(minutes);
   parts.push(first);
   parts.push(second);
 
   parts.push(COLON_NUM); // colon ":"
 
-  let (first, second) = split_number(seconds);
+  let (first, second) = split_2digits_number(seconds);
   parts.push(first);
   parts.push(second);
 
@@ -351,8 +356,8 @@ fn apply_num_textures(state: &mut State, time_parts: Vec<usize>, w_width: u32, w
         .choose(&mut rand::thread_rng())
         .unwrap_or(&state.colon_textures[0])
     } else {
-      let variants: [usize; 3] = [0, 1, 2];
-      let num_variant = *part * 3 + variants.choose(&mut rand::thread_rng()).unwrap_or(&0);
+      let num_variant =
+        *part * VAIANTS.len() + VAIANTS.choose(&mut rand::thread_rng()).unwrap_or(&0);
       &state.num_textures[num_variant]
     };
 

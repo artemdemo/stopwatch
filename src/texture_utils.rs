@@ -1,6 +1,7 @@
 use notan::prelude::*;
 
 pub const COLON_NUM: usize = 10;
+pub const VAIANTS: [usize; 3] = [0, 1, 2];
 
 pub fn load_num_textures(gfx: &mut Graphics) -> [Texture; 30] {
   let num_textures: [Texture; 30] = [
