@@ -125,6 +125,9 @@ fn reset_stopwatch(state: &mut State) {
 }
 
 fn update(app: &mut App, state: &mut State) {
+  if app.keyboard.logo() && app.keyboard.was_released(KeyCode::W) {
+    app.exit();
+  }
   match &mut state.time_state {
     TimeState::Stopwatch { paused, direction } => {
       if *paused && direction.is_none() {
