@@ -30,7 +30,9 @@ fn main() -> Result<(), String> {
         .set_resizable(true),
     )
     .add_config(DrawConfig)
-    .update(update)
+    .update(|app: &mut App, state: &mut State| {
+      handle_user_input(app, state);
+    })
     .draw(draw)
     .build()
 }
@@ -124,7 +126,8 @@ fn reset_stopwatch(state: &mut State) {
   };
 }
 
-fn update(app: &mut App, state: &mut State) {
+fn handle_user_input(app: &mut App, state: &mut State) {
+  // Handling classic Mac OS shortcut for closing a window: `Cmd+W`
   if app.keyboard.logo() && app.keyboard.was_released(KeyCode::W) {
     app.exit();
   }
