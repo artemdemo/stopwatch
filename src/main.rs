@@ -33,7 +33,9 @@ fn main() -> Result<(), String> {
     .update(|app: &mut App, state: &mut State| {
       handle_user_input(app, state);
     })
-    .draw(draw)
+    .draw(|gfx: &mut Graphics, state: &mut State| {
+      draw_frame(gfx, state);
+    })
     .build()
 }
 
@@ -203,7 +205,7 @@ fn handle_user_input(app: &mut App, state: &mut State) {
   }
 }
 
-fn draw(gfx: &mut Graphics, state: &mut State) {
+fn draw_frame(gfx: &mut Graphics, state: &mut State) {
   let system_time: i64 = Utc::now().timestamp_millis();
 
   match &mut state.time_state {
@@ -242,9 +244,9 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     } => state.timer_secs,
   };
 
-  let delta = system_time - state.prev_render_timestamp;
+  let render_delta_time = system_time - state.prev_render_timestamp;
 
-  if delta > 80 {
+  if render_delta_time > 80 {
     state.draw = gfx.create_draw();
 
     let os_theme = theme::get_os_theme();
