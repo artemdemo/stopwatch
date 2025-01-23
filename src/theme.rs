@@ -8,14 +8,18 @@ pub enum ColorTheme {
 
 pub fn get_os_theme() -> ColorTheme {
   let result = dark_light::detect();
-  if let Ok(mode) = result {
-    return match mode {
-      dark_light::Mode::Light => ColorTheme::Light,
-      dark_light::Mode::Dark => ColorTheme::Dark,
-      dark_light::Mode::Unspecified => ColorTheme::Dark,
-    };
-  } else {
-    warn!("Error occured while getting theme");
+  match result {
+    Ok(mode) => {
+      return match mode {
+        dark_light::Mode::Light => ColorTheme::Light,
+        dark_light::Mode::Dark => ColorTheme::Dark,
+        dark_light::Mode::Unspecified => ColorTheme::Dark,
+      };
+    },
+    Err(err) => {
+      warn!("Error occured while getting theme:");
+      dbg!(err);
+    },
   }
   return ColorTheme::Dark;
 }
