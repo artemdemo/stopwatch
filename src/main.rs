@@ -83,6 +83,7 @@ struct State {
   avg_num_texture_width: f32,
   texture_height: f32,
   prev_render_timestamp: i64,
+  prev_theme_check_timestamp: i64,
   draw: Draw,
   timer_last_addition: i64,
   timer_secs: i64,
@@ -111,6 +112,7 @@ fn setup(gfx: &mut Graphics) -> State {
     avg_num_texture_width: total_width / num_textures_len as f32,
     texture_height,
     prev_render_timestamp: Utc::now().timestamp_millis(),
+    prev_theme_check_timestamp: Utc::now().timestamp_millis(),
     draw: gfx.create_draw(),
     timer_last_addition: Utc::now().timestamp_millis(),
     timer_secs: 0,
@@ -205,6 +207,26 @@ fn handle_user_input(app: &mut App, state: &mut State) {
   }
 }
 
+// This designed to get theme at a reasonable pace.
+fn check_theme(state: &mut State) -> theme::ColorTheme {
+  if state.current_theme.is_none() {
+    return theme::get_os_theme();
+  }
+
+  let system_time: i64 = Utc::now().timestamp_millis();
+  let theme_delta_time = system_time - state.prev_theme_check_timestamp;
+
+  if theme_delta_time > 1000 {
+    state.prev_theme_check_timestamp = system_time;
+    return theme::get_os_theme();
+  }
+
+  match &state.current_theme {
+    Some(theme) => theme.clone(),
+    None => theme::get_os_theme(),
+  }
+}
+
 fn draw_frame(gfx: &mut Graphics, state: &mut State) {
   let system_time: i64 = Utc::now().timestamp_millis();
 
@@ -249,7 +271,7 @@ fn draw_frame(gfx: &mut Graphics, state: &mut State) {
   if render_delta_time > 80 {
     state.draw = gfx.create_draw();
 
-    let os_theme = theme::get_os_theme();
+    let os_theme = check_theme(state);
 
     if state.current_theme.is_none()
       || state
