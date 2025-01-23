@@ -242,10 +242,9 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     } => state.timer_secs,
   };
 
-  let system_time_mills = system_time;
-  let delta = system_time_mills - state.prev_render_timestamp;
+  let delta = system_time - state.prev_render_timestamp;
 
-  if delta > 50 {
+  if delta > 80 {
     state.draw = gfx.create_draw();
 
     let os_theme = theme::get_os_theme();
@@ -277,7 +276,7 @@ fn draw(gfx: &mut Graphics, state: &mut State) {
     }
 
     let (w_width, w_height) = gfx.size();
-    state.prev_render_timestamp = system_time_mills;
+    state.prev_render_timestamp = system_time;
     let time_parts = create_time_parts(duration);
 
     {

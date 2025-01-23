@@ -7,6 +7,7 @@ pub enum ColorTheme {
 }
 
 pub fn get_os_theme() -> ColorTheme {
+  println!("get_os_theme()");
   let result = dark_light::detect();
   match result {
     Ok(mode) => {
