@@ -21,7 +21,7 @@ Then press `S`.
 
 **WASM support**
 
-Everything is tasted with [`trunk`](https://trunkrs.dev/).
+Everything is tasted with [`trunk`](https://github.com/trunk-rs/trunk).
 You need to install it (I used `brew install trunk`), then you can build and serve your code.
 Just run following:
 
